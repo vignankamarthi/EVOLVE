@@ -1,0 +1,238 @@
+% AI4Pain 2026 Challenge -- ACII 2026 PAAIn Workshop submission
+% Phase 7 scaffold: structural skeleton only. The PAAIn workshop CFP and
+% LaTeX template have not been released yet. Once the organizers publish the
+% official template, swap the documentclass and styling to match. The
+% sectional skeleton below should remain valid regardless.
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% =============================================================================
+% Packages
+% =============================================================================
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+% =============================================================================
+% Metadata (placeholders, fill at submission time)
+% =============================================================================
+\title{Multi-Signal Pain Localization for the AI4Pain 2026 Challenge}
+
+\author{
+\IEEEauthorblockN{Vignan Kamarthi}
+\IEEEauthorblockA{
+Northeastern University \\
+Boston, MA, USA \\
+\textit{kamarthi.v@northeastern.edu}
+}
+}
+
+% =============================================================================
+\begin{document}
+\maketitle
+
+% =============================================================================
+% Abstract
+% =============================================================================
+\begin{abstract}
+[TBD: 150--250 word abstract.]
+We present a 3-class pain localization system for the AI4Pain 2026 Challenge,
+classifying physiological recordings as No Pain, Hand Pain, or Arm Pain from
+four signals (BVP, EDA, RESP, SpO2) collected over 65 participants
+(41 / 12 / 12 train / validation / test split). Our approach combines a
+classical machine learning track using Catch22, entropy, and statistical
+features extracted via a Rust pipeline with three deep learning architectures
+operating on raw multi-channel windows: a ResNet-1D baseline, a current-SOTA
+multimodal architecture (Phase 4 research), and a novel framework
+(Phase 5 research) that exploits [physiological prior to be filled in].
+[Headline result placeholder.] Our approach is constrained to operate without
+external data and submits five label predictions to the challenge organizers.
+\end{abstract}
+
+\begin{IEEEkeywords}
+pain assessment, physiological signals, multimodal fusion, biosignal classification, ACII 2026
+\end{IEEEkeywords}
+
+% =============================================================================
+% 1. Introduction
+% =============================================================================
+\section{Introduction}
+[TBD] Motivation: clinical relevance of automated pain localization,
+contrast with binary or intensity-based pain classification, why
+multimodal physiology beats single-channel approaches.
+
+Our contributions:
+\begin{itemize}
+  \item [Contribution 1: e.g., reproducible Rust feature extractor adapted for the four AI4Pain signals]
+  \item [Contribution 2: e.g., principled comparison of classical ML and deep learning under matching subject splits and ablations]
+  \item [Contribution 3: novel architecture (Phase 5) and what it captures about pain localization that prior SOTA does not]
+\end{itemize}
+
+% =============================================================================
+% 2. Related Work
+% =============================================================================
+\section{Related Work}
+[Populated by Phase 4 literature review (research/NN2\_SOTA\_RESEARCH.md).]
+\subsection{Pain Classification from Physiological Signals}
+\subsection{Multimodal Fusion for Biosignals}
+\subsection{Pain Localization vs.\ Intensity}
+
+% =============================================================================
+% 3. Dataset
+% =============================================================================
+\section{Dataset and Preprocessing}
+The AI4Pain 2026 Challenge provides recordings from 65 participants
+[citation TBD] with a fixed subject-level split of 41 train / 12 validation /
+12 test subjects. Each trial contains four synchronized physiological
+channels:
+\begin{itemize}
+  \item BVP (blood volume pulse)
+  \item EDA (electrodermal activity)
+  \item RESP (respiration)
+  \item SpO2 (blood oxygen saturation)
+\end{itemize}
+Trial labels are one of \texttt{No Pain (NP)}, \texttt{Hand Pain (HP)}, or
+\texttt{Arm Pain (AP)}.
+
+[TBD: per-signal sampling rates, recording duration, label distribution table.
+These fields are confirmed at Runtime HIP RT-A when the labeled release lands.]
+
+\subsection{Subject-level Splits}
+We strictly follow the challenge's fixed split. No subject appears in
+multiple splits and no preprocessing statistic is fit on subjects outside the
+training split.
+
+\subsection{Ablation Configurations}
+We evaluate three signal subsets to test the incremental value of each modality:
+
+\begin{table}[h]
+\centering
+\caption{Ablation configurations}
+\begin{tabular}{lcc}
+\toprule
+Config & Signals & Total Features (classical) \\
+\midrule
+\texttt{bvp\_eda} & BVP + EDA & 80 \\
+\texttt{bvp\_eda\_resp} & BVP + EDA + RESP & 120 \\
+\texttt{all\_four} & BVP + EDA + RESP + SpO2 & 160 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+% 4. Methods
+% =============================================================================
+\section{Methods}
+
+\subsection{Classical Machine Learning Track}
+We extract 40 features per signal via a Rust feature extractor adapted from
+prior work on cuffless blood pressure inference: 22 Catch22 canonical
+time-series features, 10 entropy measures (8 ordinal-pattern entropies plus
+sample and approximate entropy), and 8 statistical features (mean, median,
+std, skewness, kurtosis, RMS, min, max). After per-column standardization fit
+on the training subjects only, we tune four classifiers via Optuna with
+stratified subject-disjoint 5-fold cross-validation, optimizing balanced
+accuracy:
+\begin{itemize}
+  \item Logistic Regression (linear baseline)
+  \item Random Forest Classifier
+  \item XGBoost Classifier
+  \item LightGBM Classifier
+\end{itemize}
+
+\subsection{Deep Learning Track}
+We train three architectures on raw multi-channel signal windows
+[window length and stride confirmed at RT-E]:
+
+\subsubsection{NN \#1: ResNet-1D Baseline}
+A 1D ResNet adapted from prior cardiovascular signal work, with the
+classification head reshaped from regression output (1 unit) to 3-class
+logits. Per-channel z-scoring uses statistics fit on training subjects only.
+
+\subsubsection{NN \#2: Current SOTA}
+[Filled in by Phase 4 research; cite the selected architecture and rationale.]
+
+\subsubsection{NN \#3: Novel Framework}
+[Filled in by Phase 5 research; this is the paper's central contribution.
+Block diagram and ablation plan to be inserted as Figure~\ref{fig:nn3}.]
+
+\subsection{Training Protocol}
+All deep models use \texttt{nn.CrossEntropyLoss} with class weights derived
+from the training label distribution, AdamW optimization with weight decay,
+\texttt{ReduceLROnPlateau} on validation balanced accuracy, gradient clipping
+at norm 1.0, per-epoch checkpointing, and early stopping (patience 20). Best
+checkpoint is selected by validation balanced accuracy.
+
+% =============================================================================
+% 5. Experiments
+% =============================================================================
+\section{Experiments}
+
+\subsection{Evaluation Metrics}
+We report balanced accuracy (primary), macro-F1, per-class precision / recall
+for No Pain, Hand Pain, and Arm Pain, full $3 \times 3$ confusion matrices,
+and one-vs-rest AUC. We never report a single aggregate score in isolation.
+
+\subsection{Hardware}
+1$\times$NVIDIA H200 GPU on the Northeastern Explorer cluster, 8-hour wall
+time per job, 12 GB RAM. No model training exceeds the wall time budget.
+
+% =============================================================================
+% 6. Results
+% =============================================================================
+\section{Results}
+
+\begin{table}[h]
+\centering
+\caption{Validation results across ablation configurations [TBD].}
+\begin{tabular}{llcccc}
+\toprule
+Config & Model & Bal. Acc. & Macro-F1 & AUC-OVR & Notes \\
+\midrule
+\texttt{bvp\_eda} & Logistic & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & RF & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & XGB & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & LGBM & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & ResNet-1D & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & NN \#2 & -- & -- & -- & -- \\
+\texttt{bvp\_eda} & NN \#3 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Test Set Submissions}
+The challenge limits each team to five test-set label submissions. We track
+each submission with rationale and post-hoc result in our internal
+\texttt{submission\_tracker.md} (see Section TBD).
+
+% =============================================================================
+% 7. Discussion
+% =============================================================================
+\section{Discussion}
+[TBD]
+
+% =============================================================================
+% 8. Conclusion
+% =============================================================================
+\section{Conclusion}
+[TBD]
+
+% =============================================================================
+% Acknowledgments
+% =============================================================================
+\section*{Acknowledgments}
+Compute provided by the Northeastern University Explorer cluster.
+
+% =============================================================================
+% References
+% =============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{bibliography}
+
+\end{document}
