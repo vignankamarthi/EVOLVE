@@ -1,0 +1,20 @@
+{
+  "bvp_eda": {
+    "signals": ["bvp", "eda"],
+    "n_features": 80,
+    "dl_channels": 2,
+    "description": "BVP + EDA (autonomic baseline: cardiovascular + sympathetic)"
+  },
+  "bvp_eda_resp": {
+    "signals": ["bvp", "eda", "resp"],
+    "n_features": 120,
+    "dl_channels": 3,
+    "description": "BVP + EDA + RESP (autonomic + respiratory)"
+  },
+  "all_four": {
+    "signals": ["bvp", "eda", "resp", "spo2"],
+    "n_features": 160,
+    "dl_channels": 4,
+    "description": "All four challenge signals (full)"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "frameworks": ["catch22", "entropy", "stats"],
+  "entropy": {
+    "dimensions": [7],
+    "delays": [2],
+    "q_renyi": 1.0,
+    "q_tsallis": 1.0,
+    "sample_entropy_m": 2,
+    "approximate_entropy_m": 2
+  },
+  "signal": {
+    "sampling_frequency_hz_bvp": null,
+    "sampling_frequency_hz_eda": null,
+    "sampling_frequency_hz_resp": null,
+    "sampling_frequency_hz_spo2": null,
+    "segment_length_seconds": null,
+    "segment_length_samples": null,
+    "nan_threshold": 0.2,
+    "min_signal_length": 50,
+    "notes": "Sampling rates and segment length depend on RT-A (data format confirmation). Populate after data arrives in April 2026."
+  },
+  "normalization": {
+    "strategy": "per_column_standard_scaler",
+    "fit_on": "training_subjects_only",
+    "pre_extraction": "none",
+    "notes": "LOCKED. No pre-extraction normalization. StandardScaler per feature column after extraction, fit on training subjects only."
+  }
+}

@@ -1,0 +1,73 @@
+# Agentic project files (never committed)
+CLAUDE.md
+MEMORY.md
+ANTIPATTERNS.md
+PLAN.md
+COMMITS.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (challenge data is not redistributable)
+data/raw/
+data/features/
+data/signals/
+data/interim/
+*.mat
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.parquet
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.toc
+
+# Model checkpoints and large weights
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+
+# Rust build
+feature-extraction-rust/target/
+target/
+# Note: Cargo.lock IS tracked (binary crate convention)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cluster / SLURM
+slurm-*.out
+*.err
+logs/*.out
+logs/*.err
