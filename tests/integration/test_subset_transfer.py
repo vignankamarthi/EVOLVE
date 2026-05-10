@@ -23,9 +23,10 @@ def test_subset_transfer_produces_correlation_table(tmp_path: Path, sample_progr
     assert table["chosen_k"] in (5, 10, 15, 20)
 
 
-@pytest.mark.xfail(strict=True, raises=NotImplementedError, reason="TDD red")
 def test_subset_subjects_disjoint_from_val():
+    """ai4pain.splits is implemented, this is now a green-state invariant test."""
     all_subjects = [f"S{i:02d}" for i in range(41)]
     train, val = splits.subject_disjoint_split(all_subjects, n_val=5, seed=0)
     chosen = splits.k_subject_subset(train, k=10, seed=0)
     assert set(chosen).isdisjoint(set(val))
+    assert set(chosen).issubset(set(train))

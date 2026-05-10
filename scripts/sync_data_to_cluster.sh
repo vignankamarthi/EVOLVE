@@ -10,9 +10,10 @@
 
 set -euo pipefail
 
-EXPLORER_USER="${EXPLORER_USER:-vignan}"
-EXPLORER_HOST="${EXPLORER_HOST:-explorer.discovery.neu.edu}"
-EXPLORER_REPO="${EXPLORER_REPO:-/home/${EXPLORER_USER}/AI4Pain-2026}"
+EXPLORER_USER="${EXPLORER_USER:-kamarthi.v}"
+# Use the transfer node (xfer.discovery.neu.edu) for rsync, not the login node.
+EXPLORER_HOST="${EXPLORER_HOST:-xfer.discovery.neu.edu}"
+EXPLORER_REPO="${EXPLORER_REPO:-/projects/SensingandInnovationLab/vignankamarthi/EVOLVE}"
 
 LOCAL_DIR="data/raw/"
 REMOTE_DIR="${EXPLORER_USER}@${EXPLORER_HOST}:${EXPLORER_REPO}/data/raw/"
