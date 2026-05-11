@@ -11,7 +11,7 @@ def test_module_imports():
 
 
 def test_iteration_paused_carries_hip_label():
-    p = loop.IterationPaused(hip="HIP-D", run_id="r1", action_required="rsync up")
+    p = loop.IterationPaused(hip="HIP-D", run_id="r1", action_required="sbatch on cluster")
     assert p.hip == "HIP-D"
     assert p.run_id == "r1"
 

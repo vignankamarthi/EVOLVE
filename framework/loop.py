@@ -33,9 +33,16 @@ fully autonomous once the Claude Code session wraps `advance_one_iteration`
 in its per-iteration turn.
 """
 from pathlib import Path
+import math
 
 from framework import seeds, render
 from framework.ledger import Ledger
+from framework.introspect import (
+    DetectorConfig,
+    GenomeMutation,
+    propose_mutation,
+    should_fire,
+)
 
 
 class IterationOutcome:
@@ -107,8 +114,9 @@ def advance_one_iteration(experiments_root: Path = Path("experiments"),
                 hip="HIP-D",
                 run_id=rid,
                 action_required=(
-                    f"rsync {run_dir}/ to cluster, then sbatch with "
-                    f"RUN_ID={rid}"),
+                    f"sbatch --array=0-0 --export=ALL,MANIFEST="
+                    f"{run_dir.parent}/manifest.json scripts/run_array.slurm "
+                    f"(generation and training happen on cluster; see PLAN.md)"),
             )
 
         # Subsequent calls: this minimal impl returns IterationPaused
@@ -141,3 +149,94 @@ def report_result(run_id: str, fitness_vector: dict,
     finally:
         led.close()
     return IterationCompleted(run_id=run_id, fitness_vector=fitness_vector)
+
+
+# --- Section 11 observability + Section 7 Level 2 wiring ---
+
+
+def record_mutation_attempt(iteration: int, run_id: str,
+                            parent_run_ids: list[str],
+                            prompt_context: str,
+                            child_spec: dict,
+                            fingerprint: str,
+                            reasoning_summary: str,
+                            accepted: bool,
+                            ledger_path: Path = Path("ledger/experiments.db"),
+                            experiments_root: Path = Path("experiments"),
+                            ) -> None:
+    """Persist a mutation_trace row (SQLite + JSONL mirror). Called by the
+    Claude Code session each iteration after a child spec is emitted.
+    """
+    led = Ledger(ledger_path, experiments_root=experiments_root)
+    try:
+        led.init_schema()
+        led.write_mutation_trace(
+            iteration=iteration, run_id=run_id,
+            parent_run_ids=parent_run_ids,
+            prompt_context=prompt_context,
+            child_spec=child_spec,
+            fingerprint=fingerprint,
+            reasoning_summary=reasoning_summary,
+            accepted=accepted,
+        )
+    finally:
+        led.close()
+
+
+def record_constraint_check(iteration: int, fingerprint: str | None,
+                            rule_name: str, accepted: bool,
+                            reason_code: str | None = None,
+                            reason_detail: str | None = None,
+                            ledger_path: Path = Path("ledger/experiments.db"),
+                            ) -> None:
+    """Persist one constraint_event row. Called by the constraint pipeline
+    for each rule check (rule_guards / ast_tabu / curriculum_unlock / lineage_cap).
+    """
+    led = Ledger(ledger_path)
+    try:
+        led.init_schema()
+        led.write_constraint_event(
+            iteration=iteration, child_fingerprint=fingerprint,
+            rule_name=rule_name, accepted=accepted,
+            reason_code=reason_code, reason_detail=reason_detail,
+        )
+    finally:
+        led.close()
+
+
+def check_level2(ledger: Ledger, current_genome: dict, current_iter: int,
+                 last_fire_iter: int = 0,
+                 config: DetectorConfig | None = None,
+                 ) -> tuple[bool, GenomeMutation | None, dict]:
+    """Run the compound detector against ledger state. Returns
+    (fired, proposal_or_None, signals_dict).
+
+    `signals_dict` carries every quantity the detector consulted, so the
+    Claude Code session can surface it in the HIP-H pause message to Vignan
+    without re-querying.
+    """
+    cfg = config or DetectorConfig()
+    window = cfg.window
+    median_delta = ledger.median_fitness_delta_per_island(window)
+    rejection_rate = ledger.constraint_rejection_rate(window)
+    h = ledger.fingerprint_entropy(window)
+    h_max = math.log2(window) if window > 1 else 1.0
+    entropy_ratio = (h / h_max) if h_max > 0 else 1.0
+    fired = should_fire(
+        current_iter=current_iter, last_fire_iter=last_fire_iter,
+        median_delta=median_delta, rejection_rate=rejection_rate,
+        entropy_ratio=entropy_ratio, config=cfg,
+    )
+    signals = {
+        "current_iter": current_iter,
+        "last_fire_iter": last_fire_iter,
+        "window": window,
+        "median_fitness_delta": median_delta,
+        "constraint_rejection_rate": rejection_rate,
+        "fingerprint_entropy": h,
+        "entropy_ratio": entropy_ratio,
+    }
+    if not fired:
+        return False, None, signals
+    proposal = propose_mutation(ledger, current_genome, current_iter, cfg)
+    return True, proposal, signals

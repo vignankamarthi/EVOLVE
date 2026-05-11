@@ -9,19 +9,31 @@ Tables:
   framework_mutations id, parent_hash, child_hash, description, fitness_after_M_json, created_at
   submissions         submission_id, run_id, slot_used, balanced_acc, created_at
   run_id_seq          single-column rowid sequencer for unique run_id allocation
+  mutation_traces     iteration, run_id, parent_run_ids, prompt_context,
+                      child_spec, fingerprint, reasoning_summary, accepted (Section 11)
+  constraint_events   iteration, child_fingerprint, rule_name, accepted,
+                      reason_code, reason_detail (Section 11)
 
 All writes are atomic (autocommit, WAL journal). Loop is resumable from any iteration.
 
-Spec: FRAMEWORK.md Section 6 (meta_state), Section 7 (framework_mutations).
+`mutation_traces` writes also mirror to `<experiments_root>/<run_id>/trace.jsonl`
+when `experiments_root` is provided to the Ledger constructor. JSONL is the
+durable write-ahead log; SQLite is the queryable materialized view for Level 2.
+
+Spec: FRAMEWORK.md Section 6 (meta_state), Section 7 (framework_mutations),
+Section 11 (mutation_traces, constraint_events, query helpers).
 """
 from pathlib import Path
 from typing import Any
 import json
+import math
 import sqlite3
+import statistics
 import time
 
 
 DEFAULT_DB_PATH = Path("ledger/experiments.db")
+DEFAULT_EXPERIMENTS_ROOT = Path("experiments")
 
 
 SCHEMA = """
@@ -88,6 +100,35 @@ CREATE TABLE IF NOT EXISTS submissions (
 CREATE TABLE IF NOT EXISTS run_id_seq (
     n INTEGER PRIMARY KEY AUTOINCREMENT
 );
+
+CREATE TABLE IF NOT EXISTS mutation_traces (
+    iteration INTEGER NOT NULL,
+    run_id TEXT NOT NULL,
+    parent_run_ids TEXT,
+    prompt_context TEXT,
+    child_spec TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    reasoning_summary TEXT,
+    accepted INTEGER NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (iteration, run_id)
+);
+CREATE INDEX IF NOT EXISTS idx_traces_iter ON mutation_traces(iteration);
+CREATE INDEX IF NOT EXISTS idx_traces_fingerprint ON mutation_traces(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_traces_created ON mutation_traces(created_at);
+
+CREATE TABLE IF NOT EXISTS constraint_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    iteration INTEGER NOT NULL,
+    child_fingerprint TEXT,
+    rule_name TEXT NOT NULL,
+    accepted INTEGER NOT NULL,
+    reason_code TEXT,
+    reason_detail TEXT,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_iter ON constraint_events(iteration);
+CREATE INDEX IF NOT EXISTS idx_events_rule ON constraint_events(rule_name);
 """
 
 
@@ -110,9 +151,12 @@ def _hydrate_experiment(row: sqlite3.Row) -> dict[str, Any]:
 class Ledger:
     """SQLite-backed experiment ledger. See module docstring for schema."""
 
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH):
+    def __init__(self, db_path: Path = DEFAULT_DB_PATH,
+                 experiments_root: Path | None = None):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.experiments_root = (
+            Path(experiments_root) if experiments_root is not None else None)
         self._conn = sqlite3.connect(str(self.db_path), isolation_level=None)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
@@ -186,3 +230,188 @@ class Ledger:
             "VALUES (?, ?, ?, ?)",
             (parent_hash, child_hash, desc, time.time()),
         )
+
+    # --- Section 11: mutation_traces + JSONL mirror ---
+
+    def write_mutation_trace(self, iteration: int, run_id: str,
+                             parent_run_ids: list[str],
+                             prompt_context: str,
+                             child_spec: dict,
+                             fingerprint: str,
+                             reasoning_summary: str,
+                             accepted: bool) -> None:
+        """Persist one mutation trace.
+
+        SQLite write is atomic via the autocommit connection. When
+        `experiments_root` was provided at construction time, the same
+        payload is appended to `<experiments_root>/<run_id>/trace.jsonl`
+        (creating the run directory if needed).
+        """
+        created_at = time.time()
+        payload = {
+            "iteration": iteration,
+            "run_id": run_id,
+            "parent_run_ids": parent_run_ids,
+            "prompt_context": prompt_context,
+            "child_spec": child_spec,
+            "fingerprint": fingerprint,
+            "reasoning_summary": reasoning_summary,
+            "accepted": bool(accepted),
+            "created_at": created_at,
+        }
+        self._conn.execute(
+            "INSERT OR REPLACE INTO mutation_traces "
+            "(iteration, run_id, parent_run_ids, prompt_context, child_spec, "
+            "fingerprint, reasoning_summary, accepted, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                iteration,
+                run_id,
+                json.dumps(parent_run_ids),
+                prompt_context,
+                json.dumps(child_spec),
+                fingerprint,
+                reasoning_summary,
+                1 if accepted else 0,
+                created_at,
+            ),
+        )
+        if self.experiments_root is not None:
+            run_dir = self.experiments_root / run_id
+            run_dir.mkdir(parents=True, exist_ok=True)
+            with (run_dir / "trace.jsonl").open("a") as f:
+                f.write(json.dumps(payload) + "\n")
+
+    def recent_mutation_traces(self, window: int) -> list[dict]:
+        """Last `window` traces, newest first."""
+        rows = self._conn.execute(
+            "SELECT iteration, run_id, parent_run_ids, prompt_context, "
+            "child_spec, fingerprint, reasoning_summary, accepted, created_at "
+            "FROM mutation_traces ORDER BY created_at DESC LIMIT ?",
+            (int(window),),
+        ).fetchall()
+        out = []
+        for r in rows:
+            out.append({
+                "iteration": r["iteration"],
+                "run_id": r["run_id"],
+                "parent_run_ids": json.loads(r["parent_run_ids"]) if r["parent_run_ids"] else [],
+                "prompt_context": r["prompt_context"],
+                "child_spec": json.loads(r["child_spec"]),
+                "fingerprint": r["fingerprint"],
+                "reasoning_summary": r["reasoning_summary"],
+                "accepted": bool(r["accepted"]),
+                "created_at": r["created_at"],
+            })
+        return out
+
+    def current_iteration(self) -> int:
+        """Highest iteration in mutation_traces; 0 if empty."""
+        row = self._conn.execute(
+            "SELECT MAX(iteration) AS m FROM mutation_traces").fetchone()
+        if row is None or row["m"] is None:
+            return 0
+        return int(row["m"])
+
+    def fingerprint_entropy(self, window: int) -> float:
+        """Shannon entropy (bits) of the fingerprint distribution in the
+        most recent `window` traces. Returns 0.0 on empty window.
+        """
+        rows = self._conn.execute(
+            "SELECT fingerprint FROM mutation_traces "
+            "ORDER BY created_at DESC LIMIT ?",
+            (int(window),),
+        ).fetchall()
+        if not rows:
+            return 0.0
+        counts: dict[str, int] = {}
+        for r in rows:
+            counts[r["fingerprint"]] = counts.get(r["fingerprint"], 0) + 1
+        n = sum(counts.values())
+        h = 0.0
+        for c in counts.values():
+            p = c / n
+            if p > 0:
+                h -= p * math.log2(p)
+        return h
+
+    # --- Section 11: constraint_events ---
+
+    def write_constraint_event(self, iteration: int,
+                               child_fingerprint: str | None,
+                               rule_name: str,
+                               accepted: bool,
+                               reason_code: str | None = None,
+                               reason_detail: str | None = None) -> None:
+        self._conn.execute(
+            "INSERT INTO constraint_events "
+            "(iteration, child_fingerprint, rule_name, accepted, "
+            "reason_code, reason_detail, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                int(iteration),
+                child_fingerprint,
+                rule_name,
+                1 if accepted else 0,
+                reason_code,
+                reason_detail,
+                time.time(),
+            ),
+        )
+
+    def constraint_rejection_rate(self, window: int,
+                                  rule: str | None = None) -> float:
+        """Fraction of the most recent `window` constraint_events (optionally
+        filtered by rule) that were rejected. Returns 0.0 on empty window.
+        """
+        if rule is None:
+            rows = self._conn.execute(
+                "SELECT accepted FROM constraint_events "
+                "ORDER BY created_at DESC LIMIT ?",
+                (int(window),),
+            ).fetchall()
+        else:
+            rows = self._conn.execute(
+                "SELECT accepted FROM constraint_events WHERE rule_name = ? "
+                "ORDER BY created_at DESC LIMIT ?",
+                (rule, int(window)),
+            ).fetchall()
+        if not rows:
+            return 0.0
+        rejected = sum(1 for r in rows if not r["accepted"])
+        return rejected / len(rows)
+
+    # --- Section 11: fitness-delta query helper ---
+
+    def median_fitness_delta_per_island(self, window: int) -> float:
+        """Compute median balanced_acc delta per island over the last
+        `window` completed experiments per island, then return the median
+        across islands. Returns 0.0 when there is insufficient data.
+        """
+        rows = self._conn.execute(
+            "SELECT island_id, fitness_json, completed_at FROM experiments "
+            "WHERE fitness_json IS NOT NULL "
+            "ORDER BY completed_at ASC",
+        ).fetchall()
+        if not rows:
+            return 0.0
+        per_island: dict[int, list[float]] = {}
+        for r in rows:
+            try:
+                acc = json.loads(r["fitness_json"]).get("balanced_acc")
+            except (TypeError, ValueError):
+                continue
+            if isinstance(acc, (int, float)):
+                per_island.setdefault(r["island_id"], []).append(float(acc))
+        if not per_island:
+            return 0.0
+        per_island_medians: list[float] = []
+        for accs in per_island.values():
+            tail = accs[-int(window):] if len(accs) > window else accs
+            if len(tail) < 2:
+                continue
+            deltas = [tail[i + 1] - tail[i] for i in range(len(tail) - 1)]
+            per_island_medians.append(statistics.median(deltas))
+        if not per_island_medians:
+            return 0.0
+        return float(statistics.median(per_island_medians))
