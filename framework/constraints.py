@@ -36,7 +36,13 @@ BANNED_IMPORTS = frozenset({
 })
 
 
-# Curriculum stages locked at FRAMEWORK.md Section 9 decision 3.
+# Curriculum stages. Decision 3 (2026-05-10) defined the stages; HIP-C
+# (2026-05-11) cut classical ML families (lr / rf / xgb / lightgbm / catch22_gbm)
+# from the allowed set because hand-crafted-feature + tree pipelines have
+# underperformed on this task in prior work. Mutations proposing these families
+# are now treated as "not in table" by curriculum_unlock and rejected.
+# ridge_classifier_cv stays because MINIROCKET pairs random conv kernels with
+# it (neural-adjacent feature extraction, classical decision boundary).
 DEFAULT_CURRICULUM_THRESHOLDS = {
     "cnn": 0,
     "1d_cnn": 0,
@@ -44,11 +50,7 @@ DEFAULT_CURRICULUM_THRESHOLDS = {
     "rnn": 0,
     "gru": 0,
     "lstm": 0,
-    "lr": 0,
-    "rf": 0,
-    "xgb": 0,
-    "lightgbm": 0,
-    "catch22_gbm": 0,
+    "ridge_classifier_cv": 0,
     "transformer": 1,
     "multi_stream_attention": 1,
     "mamba": 2,

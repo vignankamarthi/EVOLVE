@@ -17,9 +17,14 @@ def test_curriculum_table_matches_design_decision():
     t = constraints.DEFAULT_CURRICULUM_THRESHOLDS
     assert t["1d_cnn"] == 0
     assert t["bigru"] == 0
-    assert t["xgb"] == 0
+    assert t["ridge_classifier_cv"] == 0
     assert t["transformer"] == 1
     assert t["mamba"] == 2
+    # HIP-C cut: classical-ML model families are NOT in the table
+    assert "xgb" not in t
+    assert "lightgbm" not in t
+    assert "lr" not in t
+    assert "rf" not in t
 
 
 # ---------- rule_guards ----------

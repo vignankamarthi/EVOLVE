@@ -8,18 +8,27 @@ def test_module_imports():
     assert callable(seeds.diversify_population)
 
 
-def test_default_seed_specs_returns_six_seeds():
+def test_default_seed_specs_returns_five_seeds():
+    """HIP-C ratified 5 seeds (2026-05-11): 4 neural + MINIROCKET. Catch22+gbm
+    pair dropped per Vignan's classical-ML-out-of-search decision.
+    """
     specs = seeds.default_seed_specs()
-    assert len(specs) == 6
+    assert len(specs) == 5
 
 
-def test_default_seed_families_match_decision():
-    """Decision 4: 1d_cnn, bigru, transformer, xgb, lightgbm, multi_stream_bigru."""
+def test_default_seed_families_match_hip_c():
     specs = seeds.default_seed_specs()
     families = {s["model"]["family"] for s in specs}
-    expected = {"1d_cnn", "bigru", "transformer", "xgb", "lightgbm",
-                "multi_stream_bigru"}
+    expected = {"1d_cnn", "bigru", "transformer",
+                "multi_stream_bigru", "ridge_classifier_cv"}
     assert families == expected
+
+
+def test_catch22_seeds_no_longer_present():
+    """HIP-C cut: Catch22+xgb and Catch22+lightgbm are no longer in the pool."""
+    names = {s["name"] for s in seeds.default_seed_specs()}
+    assert "seed_catch22_xgb" not in names
+    assert "seed_catch22_lightgbm" not in names
 
 
 def test_each_seed_has_required_top_level_keys():
@@ -29,10 +38,15 @@ def test_each_seed_has_required_top_level_keys():
             assert key in spec
 
 
-def test_catch22_seeds_use_feature_extraction():
+def test_minirocket_seed_uses_random_kernel_features():
     specs = {s["name"]: s for s in seeds.default_seed_specs()}
-    assert specs["seed_catch22_xgb"]["feature_extraction"]["family"] == "catch22"
-    assert specs["seed_catch22_lightgbm"]["feature_extraction"]["family"] == "catch22"
+    s = specs["seed_minirocket"]
+    assert s["feature_extraction"]["family"] == "minirocket"
+    # Canonical MINIROCKET feature count is ~9996 (84 dilations x 119 kernels)
+    assert s["feature_extraction"]["num_features"] == 9996
+    assert s["model"]["family"] == "ridge_classifier_cv"
+    # RidgeClassifierCV alpha grid spans 6 decades
+    assert len(s["model"]["alphas"]) >= 4
 
 
 def test_neural_seeds_have_no_feature_extraction():
@@ -63,18 +77,17 @@ def test_diversify_population_rejects_invalid_island_count():
 
 
 def test_diversify_population_handles_more_islands_than_seeds():
-    specs = seeds.default_seed_specs()  # 6 seeds
+    specs = seeds.default_seed_specs()  # 5 seeds
     distributed = seeds.diversify_population(specs, island_count=10)
     assert len(distributed) == 10
 
 
 def test_diversify_population_handles_fewer_islands_than_seeds():
-    specs = seeds.default_seed_specs()  # 6 seeds
+    specs = seeds.default_seed_specs()  # 5 seeds
     distributed = seeds.diversify_population(specs, island_count=3)
-    # 6 seeds round-robin across 3 islands -> 2 seeds each.
     assert len(distributed) == 3
     total = sum(len(i) for i in distributed)
-    assert total == 6
+    assert total == 5
 
 
 def test_diversify_population_empty_seeds():
