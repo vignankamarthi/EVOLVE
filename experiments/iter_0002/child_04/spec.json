@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.3,
+    "family": "bigru",
+    "hidden_size": 128,
+    "num_layers": 2
+  },
+  "name": "iter_0002_island4_h128_layers2_drop3",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "Compound winners + more regularization: h128 + layers2 + dropout 0.3. Tests if the compound model overfits (gen_gap would rise) without stronger regularization.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 205
+  }
+}

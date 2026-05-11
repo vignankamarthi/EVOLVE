@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.2,
+    "family": "bigru",
+    "hidden_size": 64,
+    "num_layers": 3
+  },
+  "name": "iter_0002_island2_layers3",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "Push depth axis: layers=3, h=64. Tests if going deeper than layers2 helps. GRUs often saturate at 2-3 layers for short sequences; this confirms.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 203
+  }
+}

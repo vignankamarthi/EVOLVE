@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.2,
+    "family": "bigru",
+    "hidden_size": 256,
+    "num_layers": 1
+  },
+  "name": "iter_0002_island1_h256",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "Push width axis further: h256, layers=1. Tests saturation of capacity. If bal_acc <= h128 (0.46), capacity ceiling is real; if > 0.47, room to grow.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 202
+  }
+}
