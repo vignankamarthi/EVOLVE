@@ -1,4 +1,6 @@
-"""AI4Pain-2026 stochastic evolutionary framework.
+"""EVOLVE: stochastic LLM-driven evolutionary discovery framework.
+
+AI4Pain 2026 is the first case study. The framework will outlive this project.
 
 Three-level structure:
   Level 0: candidate programs (mutated every iteration)

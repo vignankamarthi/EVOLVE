@@ -25,5 +25,9 @@ fi
 
 echo "syncing data/raw/ to ${REMOTE_DIR}"
 echo "size: $(du -sh "${LOCAL_DIR}" | cut -f1)"
+
+# Ensure remote parent dir exists (macOS rsync 2.6.9 has no --mkpath).
+ssh "${EXPLORER_USER}@${EXPLORER_HOST}" "mkdir -p '${EXPLORER_REPO}/data/raw'"
+
 rsync -avz --partial --progress "${LOCAL_DIR}" "${REMOTE_DIR}"
 echo "data sync complete"

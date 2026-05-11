@@ -28,5 +28,9 @@ if [[ ! -d "${LOCAL_DIR}" ]]; then
   exit 1
 fi
 
+# Ensure the remote parent directory exists. macOS ships rsync 2.6.9 which
+# lacks --mkpath, so we create it via an explicit ssh hop before rsync.
+ssh "${EXPLORER_USER}@${EXPLORER_HOST}" "mkdir -p '${EXPLORER_REPO}/experiments/${RUN_ID}'"
+
 rsync -avz --partial --progress "${LOCAL_DIR}" "${REMOTE_DIR}"
 echo "pushed ${RUN_ID} to ${REMOTE_DIR}"

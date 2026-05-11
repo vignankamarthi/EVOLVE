@@ -1,9 +1,10 @@
-# Agentic project files (never committed)
+# Agentic project files (always gitignored, never committed)
 CLAUDE.md
 MEMORY.md
 ANTIPATTERNS.md
 FRAMEWORK.md
-COMMITS.md
+PLAN.md
+
 
 # Plan + experiment artifacts (gitignored, ledger persists locally)
 experiments/
