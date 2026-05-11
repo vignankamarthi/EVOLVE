@@ -8,23 +8,24 @@
   },
   "feature_extraction": null,
   "model": {
-    "dropout": 0.4,
-    "family": "bigru",
-    "hidden_size": 64,
-    "num_layers": 1
+    "d_model": 64,
+    "dropout": 0.1,
+    "family": "transformer",
+    "ff_dim": 128,
+    "num_heads": 4,
+    "num_layers": 2
   },
-  "name": "iter_0001_island2_dropout4",
+  "name": "seed_lightweight_transformer",
   "preprocessing": {
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "iter_0001 batch, island 2: dropout 0.2 -> 0.4 (regularization test). All 5 children are bigru variants (only runnable family pre-entry-points). Single-axis perturbations explore the BiGRU hyperparam neighborhood in parallel; we learn 5 things per batch instead of 1.",
   "training": {
     "batch_size": 32,
     "epochs": 20,
     "loss": "ce_class_balanced",
-    "lr": 0.001,
-    "optimizer": "adam",
-    "seed": 103
+    "lr": 0.0005,
+    "optimizer": "adamw",
+    "seed": 42
   }
 }

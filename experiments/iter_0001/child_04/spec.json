@@ -6,25 +6,32 @@
   "decode": {
     "strategy": "argmax"
   },
-  "feature_extraction": null,
-  "model": {
-    "dropout": 0.2,
-    "family": "bigru",
-    "hidden_size": 64,
-    "num_layers": 1
+  "feature_extraction": {
+    "family": "minirocket",
+    "num_features": 9996,
+    "per_channel": true,
+    "random_state": 42
   },
-  "name": "iter_0001_island4_lr3e4",
+  "model": {
+    "alphas": [
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "class_weight": "balanced",
+    "family": "ridge_classifier_cv"
+  },
+  "name": "seed_minirocket",
   "preprocessing": {
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "iter_0001 batch, island 4: lr 1e-3 -> 3e-4 (lower learning rate, slower convergence). All 5 children are bigru variants (only runnable family pre-entry-points). Single-axis perturbations explore the BiGRU hyperparam neighborhood in parallel; we learn 5 things per batch instead of 1.",
   "training": {
-    "batch_size": 32,
-    "epochs": 20,
-    "loss": "ce_class_balanced",
-    "lr": 0.0003,
-    "optimizer": "adam",
-    "seed": 105
+    "loss": "ridge_regression_cv",
+    "seed": 42
   }
 }

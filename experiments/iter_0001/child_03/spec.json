@@ -8,23 +8,23 @@
   },
   "feature_extraction": null,
   "model": {
-    "dropout": 0.2,
-    "family": "bigru",
-    "hidden_size": 64,
-    "num_layers": 1
+    "family": "multi_stream_bigru",
+    "fusion": "late_concat",
+    "fusion_dropout": 0.2,
+    "per_channel_hidden": 32,
+    "per_channel_layers": 1
   },
-  "name": "iter_0001_island3_epochs40",
+  "name": "seed_multi_stream_bigru",
   "preprocessing": {
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "iter_0001 batch, island 3: epochs 20 -> 40 (training duration test, may help if undertrained). All 5 children are bigru variants (only runnable family pre-entry-points). Single-axis perturbations explore the BiGRU hyperparam neighborhood in parallel; we learn 5 things per batch instead of 1.",
   "training": {
     "batch_size": 32,
-    "epochs": 40,
+    "epochs": 20,
     "loss": "ce_class_balanced",
     "lr": 0.001,
     "optimizer": "adam",
-    "seed": 104
+    "seed": 42
   }
 }

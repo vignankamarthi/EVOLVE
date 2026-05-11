@@ -8,23 +8,23 @@
   },
   "feature_extraction": null,
   "model": {
-    "dropout": 0.2,
-    "family": "bigru",
-    "hidden_size": 128,
-    "num_layers": 1
+    "base_channels": 32,
+    "depth": 4,
+    "family": "1d_cnn",
+    "kernel_size": 7,
+    "use_residual": true
   },
-  "name": "iter_0001_island0_h128",
+  "name": "seed_1d_cnn_resnet",
   "preprocessing": {
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "iter_0001 batch, island 0: hidden_size 64 -> 128 (capacity doubling test). All 5 children are bigru variants (only runnable family pre-entry-points). Single-axis perturbations explore the BiGRU hyperparam neighborhood in parallel; we learn 5 things per batch instead of 1.",
   "training": {
     "batch_size": 32,
     "epochs": 20,
     "loss": "ce_class_balanced",
     "lr": 0.001,
     "optimizer": "adam",
-    "seed": 101
+    "seed": 42
   }
 }
