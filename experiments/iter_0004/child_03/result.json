@@ -1,0 +1,254 @@
+{
+  "name": "iter_0004_island3_fusion_dropout_up",
+  "best_val_metrics": {
+    "balanced_acc": 0.4375,
+    "macro_f1": 0.423695060436839,
+    "per_class_pr": {
+      "NP": [
+        0.45454545454545453,
+        0.6597222222222222
+      ],
+      "AP": [
+        0.42063492063492064,
+        0.3680555555555556
+      ],
+      "HP": [
+        0.422680412371134,
+        0.2847222222222222
+      ]
+    },
+    "confusion_3x3": [
+      [
+        95,
+        28,
+        21
+      ],
+      [
+        56,
+        53,
+        35
+      ],
+      [
+        58,
+        45,
+        41
+      ]
+    ],
+    "auc_ovr": 0.6403838734567902,
+    "ece": 0.014059237790880386
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.41898148148148145,
+    "macro_f1": 0.34116587321585906,
+    "per_class_pr": {
+      "NP": [
+        0.43824701195219123,
+        0.7638888888888888
+      ],
+      "AP": [
+        0.40828402366863903,
+        0.4791666666666667
+      ],
+      "HP": [
+        0.16666666666666666,
+        0.013888888888888888
+      ]
+    },
+    "confusion_3x3": [
+      [
+        110,
+        31,
+        3
+      ],
+      [
+        68,
+        69,
+        7
+      ],
+      [
+        73,
+        69,
+        2
+      ]
+    ],
+    "auc_ovr": 0.63671875,
+    "ece": 0.0662515600108438
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1004803975423176,
+      "train_bal_acc": 0.37777777777777777,
+      "val_bal_acc": 0.42361111111111116,
+      "val_macro_f1": 0.3397101449275362
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.0933327078819275,
+      "train_bal_acc": 0.3444444444444445,
+      "val_bal_acc": 0.3935185185185186,
+      "val_macro_f1": 0.33935715845204956
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.092517892519633,
+      "train_bal_acc": 0.3666666666666667,
+      "val_bal_acc": 0.39351851851851855,
+      "val_macro_f1": 0.337605606724694
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0826866626739502,
+      "train_bal_acc": 0.40277777777777785,
+      "val_bal_acc": 0.4074074074074074,
+      "val_macro_f1": 0.38248931464019026
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.0858347813288372,
+      "train_bal_acc": 0.4000000000000001,
+      "val_bal_acc": 0.40972222222222215,
+      "val_macro_f1": 0.3669077464395068
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.091647446155548,
+      "train_bal_acc": 0.3916666666666666,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.3902090321252126
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.083686371644338,
+      "train_bal_acc": 0.41111111111111115,
+      "val_bal_acc": 0.4236111111111111,
+      "val_macro_f1": 0.4045267155553954
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.0845963259538014,
+      "train_bal_acc": 0.4055555555555555,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.3691010220513326
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.0835284392038982,
+      "train_bal_acc": 0.4083333333333334,
+      "val_bal_acc": 0.41435185185185186,
+      "val_macro_f1": 0.3503528178066437
+    },
+    {
+      "epoch": 9,
+      "train_loss": 1.0869733492533367,
+      "train_bal_acc": 0.375,
+      "val_bal_acc": 0.40277777777777785,
+      "val_macro_f1": 0.380144022723572
+    },
+    {
+      "epoch": 10,
+      "train_loss": 1.077170600493749,
+      "train_bal_acc": 0.40277777777777773,
+      "val_bal_acc": 0.41898148148148145,
+      "val_macro_f1": 0.41645595986432
+    },
+    {
+      "epoch": 11,
+      "train_loss": 1.0773229996363323,
+      "train_bal_acc": 0.41944444444444445,
+      "val_bal_acc": 0.42361111111111116,
+      "val_macro_f1": 0.39594361821297136
+    },
+    {
+      "epoch": 12,
+      "train_loss": 1.066966603199641,
+      "train_bal_acc": 0.425,
+      "val_bal_acc": 0.4282407407407407,
+      "val_macro_f1": 0.40797377739157165
+    },
+    {
+      "epoch": 13,
+      "train_loss": 1.0736655394236247,
+      "train_bal_acc": 0.4166666666666667,
+      "val_bal_acc": 0.40972222222222227,
+      "val_macro_f1": 0.3501106196186375
+    },
+    {
+      "epoch": 14,
+      "train_loss": 1.072482446829478,
+      "train_bal_acc": 0.4361111111111111,
+      "val_bal_acc": 0.40972222222222227,
+      "val_macro_f1": 0.355466254299925
+    },
+    {
+      "epoch": 15,
+      "train_loss": 1.0350233515103657,
+      "train_bal_acc": 0.3972222222222222,
+      "val_bal_acc": 0.3703703703703704,
+      "val_macro_f1": 0.2491892610313663
+    },
+    {
+      "epoch": 16,
+      "train_loss": 1.0850789844989777,
+      "train_bal_acc": 0.375,
+      "val_bal_acc": 0.4259259259259259,
+      "val_macro_f1": 0.4209398127852704
+    },
+    {
+      "epoch": 17,
+      "train_loss": 1.0555565754572551,
+      "train_bal_acc": 0.4694444444444444,
+      "val_bal_acc": 0.4375,
+      "val_macro_f1": 0.423695060436839
+    },
+    {
+      "epoch": 18,
+      "train_loss": 1.0367301950852077,
+      "train_bal_acc": 0.4750000000000001,
+      "val_bal_acc": 0.41898148148148145,
+      "val_macro_f1": 0.3587089095116416
+    },
+    {
+      "epoch": 19,
+      "train_loss": 1.032378688454628,
+      "train_bal_acc": 0.4694444444444445,
+      "val_bal_acc": 0.41898148148148145,
+      "val_macro_f1": 0.34116587321585906
+    }
+  ],
+  "param_count": 27651,
+  "train_seconds": 4.1067259311676025,
+  "inference_seconds": 0.003146648406982422,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "family": "multi_stream_bigru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.4,
+      "per_channel_hidden": 32,
+      "per_channel_layers": 1
+    },
+    "name": "iter_0004_island3_fusion_dropout_up",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "multi_stream: 0.456->0.444->0.442. Width was wrong axis. Try regularization: revert to iter_0001 (per_ch_hidden 32, layers 1) but bump fusion_dropout 0.2->0.4 to prevent late-fusion overfit.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 20,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "optimizer": "adam",
+      "seed": 404
+    }
+  }
+}

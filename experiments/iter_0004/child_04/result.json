@@ -1,0 +1,134 @@
+{
+  "name": "iter_0004_island4_extend_alphas_low",
+  "best_val_metrics": {
+    "balanced_acc": 0.4305555555555556,
+    "macro_f1": 0.43033623964423323,
+    "per_class_pr": {
+      "NP": [
+        0.48299319727891155,
+        0.4930555555555556
+      ],
+      "AP": [
+        0.42142857142857143,
+        0.4097222222222222
+      ],
+      "HP": [
+        0.38620689655172413,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        71,
+        31,
+        42
+      ],
+      [
+        38,
+        59,
+        47
+      ],
+      [
+        38,
+        50,
+        56
+      ]
+    ],
+    "auc_ovr": 0.5962577160493828,
+    "ece": 0.1656156176770175
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.4305555555555556,
+    "macro_f1": 0.43033623964423323,
+    "per_class_pr": {
+      "NP": [
+        0.48299319727891155,
+        0.4930555555555556
+      ],
+      "AP": [
+        0.42142857142857143,
+        0.4097222222222222
+      ],
+      "HP": [
+        0.38620689655172413,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        71,
+        31,
+        42
+      ],
+      [
+        38,
+        59,
+        47
+      ],
+      [
+        38,
+        50,
+        56
+      ]
+    ],
+    "auc_ovr": 0.5962577160493828,
+    "ece": 0.1656156176770175
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": NaN,
+      "train_bal_acc": NaN,
+      "val_bal_acc": 0.4305555555555556,
+      "val_macro_f1": 0.43033623964423323
+    }
+  ],
+  "param_count": 7056,
+  "train_seconds": 0.0762782096862793,
+  "inference_seconds": 0.008894681930541992,
+  "feat_seconds": 2.7071762084960938,
+  "device": "cpu",
+  "best_alpha": 3.0,
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "minirocket",
+      "max_dilations_per_kernel": 64,
+      "num_features": 9996,
+      "per_channel": true,
+      "random_state": 42
+    },
+    "model": {
+      "alphas": [
+        1e-05,
+        0.0001,
+        0.001,
+        0.003,
+        0.01,
+        0.03,
+        0.1,
+        0.3,
+        1.0,
+        3.0
+      ],
+      "class_weight": null,
+      "family": "ridge_classifier_cv"
+    },
+    "name": "iter_0004_island4_extend_alphas_low",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "MINIROCKET broke through to 0.4468 with class_weight=None + finer alphas. Amplify: keep class_weight=None, extend alpha grid further into low-regularization regime to confirm we're at the right strength.",
+    "training": {
+      "loss": "ridge_regression_cv",
+      "seed": 405
+    }
+  }
+}

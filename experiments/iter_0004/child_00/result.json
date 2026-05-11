@@ -1,0 +1,254 @@
+{
+  "name": "iter_0004_island0_no_residual",
+  "best_val_metrics": {
+    "balanced_acc": 0.4421296296296296,
+    "macro_f1": 0.40375052218901636,
+    "per_class_pr": {
+      "NP": [
+        0.4945652173913043,
+        0.6319444444444444
+      ],
+      "AP": [
+        0.425,
+        0.11805555555555555
+      ],
+      "HP": [
+        0.39903846153846156,
+        0.5763888888888888
+      ]
+    },
+    "confusion_3x3": [
+      [
+        91,
+        9,
+        44
+      ],
+      [
+        46,
+        17,
+        81
+      ],
+      [
+        47,
+        14,
+        83
+      ]
+    ],
+    "auc_ovr": 0.6270736882716049,
+    "ece": 0.07940989580971225
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.40740740740740744,
+    "macro_f1": 0.3805511207405652,
+    "per_class_pr": {
+      "NP": [
+        0.45021645021645024,
+        0.7222222222222222
+      ],
+      "AP": [
+        0.3228346456692913,
+        0.2847222222222222
+      ],
+      "HP": [
+        0.4189189189189189,
+        0.2152777777777778
+      ]
+    },
+    "confusion_3x3": [
+      [
+        104,
+        34,
+        6
+      ],
+      [
+        66,
+        41,
+        37
+      ],
+      [
+        61,
+        52,
+        31
+      ]
+    ],
+    "auc_ovr": 0.6324106224279834,
+    "ece": 0.1338176518264744
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1283377607663472,
+      "train_bal_acc": 0.3333333333333333,
+      "val_bal_acc": 0.3333333333333333,
+      "val_macro_f1": 0.16666666666666666
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.092210203409195,
+      "train_bal_acc": 0.39444444444444443,
+      "val_bal_acc": 0.3912037037037037,
+      "val_macro_f1": 0.3081673631745052
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.0755422314008076,
+      "train_bal_acc": 0.41944444444444445,
+      "val_bal_acc": 0.39351851851851843,
+      "val_macro_f1": 0.3642962014592868
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0535196314255397,
+      "train_bal_acc": 0.4583333333333333,
+      "val_bal_acc": 0.41898148148148145,
+      "val_macro_f1": 0.40028218034083135
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.0605620592832565,
+      "train_bal_acc": 0.47222222222222227,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.40639917950015364
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.039540280898412,
+      "train_bal_acc": 0.4527777777777778,
+      "val_bal_acc": 0.4398148148148148,
+      "val_macro_f1": 0.4150678388779386
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.031502589583397,
+      "train_bal_acc": 0.4472222222222222,
+      "val_bal_acc": 0.40509259259259256,
+      "val_macro_f1": 0.3811950356254154
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.0205414046843846,
+      "train_bal_acc": 0.47500000000000003,
+      "val_bal_acc": 0.4166666666666667,
+      "val_macro_f1": 0.3490242186342764
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.0003928244113922,
+      "train_bal_acc": 0.46666666666666673,
+      "val_bal_acc": 0.40972222222222227,
+      "val_macro_f1": 0.3945029732640352
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.9937401215235392,
+      "train_bal_acc": 0.48888888888888893,
+      "val_bal_acc": 0.40277777777777773,
+      "val_macro_f1": 0.32351994817638535
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.9854931682348251,
+      "train_bal_acc": 0.5,
+      "val_bal_acc": 0.4259259259259259,
+      "val_macro_f1": 0.40809486995093786
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.9697479357322057,
+      "train_bal_acc": 0.48333333333333334,
+      "val_bal_acc": 0.4421296296296296,
+      "val_macro_f1": 0.40375052218901636
+    },
+    {
+      "epoch": 12,
+      "train_loss": 1.0020234882831573,
+      "train_bal_acc": 0.48333333333333334,
+      "val_bal_acc": 0.42361111111111116,
+      "val_macro_f1": 0.40839475618616955
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.9873907665411631,
+      "train_bal_acc": 0.5277777777777778,
+      "val_bal_acc": 0.4143518518518519,
+      "val_macro_f1": 0.41117642630730433
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.9757914245128632,
+      "train_bal_acc": 0.4777777777777778,
+      "val_bal_acc": 0.4259259259259259,
+      "val_macro_f1": 0.4227391857506361
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.9941265930732092,
+      "train_bal_acc": 0.47222222222222215,
+      "val_bal_acc": 0.39814814814814814,
+      "val_macro_f1": 0.40084615500524357
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.978346606095632,
+      "train_bal_acc": 0.5416666666666666,
+      "val_bal_acc": 0.4398148148148148,
+      "val_macro_f1": 0.4259622314450675
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.9858739177385966,
+      "train_bal_acc": 0.5194444444444444,
+      "val_bal_acc": 0.41435185185185186,
+      "val_macro_f1": 0.4101790399461947
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.9587083359559377,
+      "train_bal_acc": 0.5277777777777778,
+      "val_bal_acc": 0.4375,
+      "val_macro_f1": 0.4278185646540475
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.9751808345317841,
+      "train_bal_acc": 0.5611111111111111,
+      "val_bal_acc": 0.40740740740740744,
+      "val_macro_f1": 0.3805511207405652
+    }
+  ],
+  "param_count": 59203,
+  "train_seconds": 1.2594726085662842,
+  "inference_seconds": 0.0009524822235107422,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "base_channels": 32,
+      "depth": 4,
+      "family": "1d_cnn",
+      "kernel_size": 7,
+      "use_residual": false
+    },
+    "name": "iter_0004_island0_no_residual",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "1d_cnn at 0.451->0.454->0.440 trending DOWN. Try structural toggle: use_residual True->False with iter_0001 baseline (depth 4, base_channels 32, kernel 7). Tests if residual is helping or hurting on this data scale.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 20,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "optimizer": "adam",
+      "seed": 401
+    }
+  }
+}
