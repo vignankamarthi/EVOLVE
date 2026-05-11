@@ -27,6 +27,20 @@ def test_render_run_py_dispatches_to_correct_entry_point(tmp_path: Path, sample_
     assert "run_from_dir(args.run_dir, args.data_root)" in text
 
 
+def test_render_run_py_finds_project_root_via_walk_up(tmp_path: Path, sample_program_spec):
+    """The rendered run.py must locate framework/__init__.py by walking up
+    from its own directory, NOT by hardcoded parents[N]. Verify by checking
+    the generated source uses the walk-up pattern, not a fixed index."""
+    out = render.render_spec_to_code(sample_program_spec, tmp_path / "deep" / "nested" / "dir")
+    text = out.read_text()
+    # Walk-up pattern present
+    assert "while project_root != project_root.parent" in text
+    assert 'framework / "__init__.py"' in text or 'framework' in text
+    # Hardcoded parents[N] pattern absent
+    assert ".parents[2]" not in text
+    assert ".parents[3]" not in text
+
+
 def test_render_rejects_unknown_family(tmp_path: Path, sample_program_spec):
     bad = dict(sample_program_spec)
     bad["model"] = {**bad["model"], "family": "alien"}
