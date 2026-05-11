@@ -1,0 +1,220 @@
+{
+  "name": "iter_0003_island2_regularize_hard",
+  "best_val_metrics": {
+    "balanced_acc": 0.4328703703703704,
+    "macro_f1": 0.42774691875313886,
+    "per_class_pr": {
+      "NP": [
+        0.528,
+        0.4583333333333333
+      ],
+      "AP": [
+        0.43157894736842106,
+        0.2847222222222222
+      ],
+      "HP": [
+        0.37735849056603776,
+        0.5555555555555556
+      ]
+    },
+    "confusion_3x3": [
+      [
+        66,
+        21,
+        57
+      ],
+      [
+        28,
+        41,
+        75
+      ],
+      [
+        31,
+        33,
+        80
+      ]
+    ],
+    "auc_ovr": 0.5990387088477367,
+    "ece": 0.06122399314686104
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.4143518518518518,
+    "macro_f1": 0.4084511405208883,
+    "per_class_pr": {
+      "NP": [
+        0.4645161290322581,
+        0.5
+      ],
+      "AP": [
+        0.41935483870967744,
+        0.2708333333333333
+      ],
+      "HP": [
+        0.3695652173913043,
+        0.4722222222222222
+      ]
+    },
+    "confusion_3x3": [
+      [
+        72,
+        21,
+        51
+      ],
+      [
+        40,
+        39,
+        65
+      ],
+      [
+        43,
+        33,
+        68
+      ]
+    ],
+    "auc_ovr": 0.5874565972222222,
+    "ece": 0.052495217157734766
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1231131553649902,
+      "train_bal_acc": 0.37777777777777777,
+      "val_bal_acc": 0.3819444444444444,
+      "val_macro_f1": 0.30005004806202784
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.1016164124011993,
+      "train_bal_acc": 0.39444444444444443,
+      "val_bal_acc": 0.40277777777777785,
+      "val_macro_f1": 0.33467791208079584
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.08835369348526,
+      "train_bal_acc": 0.3611111111111111,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.37988953249153196
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0827846030394237,
+      "train_bal_acc": 0.39999999999999997,
+      "val_bal_acc": 0.4212962962962963,
+      "val_macro_f1": 0.3972326046944423
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.07914333542188,
+      "train_bal_acc": 0.4166666666666667,
+      "val_bal_acc": 0.4305555555555556,
+      "val_macro_f1": 0.3670551765440939
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.077762593825658,
+      "train_bal_acc": 0.39999999999999997,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.3717863151601107
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.069684495528539,
+      "train_bal_acc": 0.4222222222222222,
+      "val_bal_acc": 0.4166666666666667,
+      "val_macro_f1": 0.41364374759337696
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.0674060483773549,
+      "train_bal_acc": 0.4444444444444445,
+      "val_bal_acc": 0.40277777777777773,
+      "val_macro_f1": 0.3416238916830577
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.06480639676253,
+      "train_bal_acc": 0.45555555555555555,
+      "val_bal_acc": 0.4328703703703704,
+      "val_macro_f1": 0.42774691875313886
+    },
+    {
+      "epoch": 9,
+      "train_loss": 1.0528725683689117,
+      "train_bal_acc": 0.44722222222222224,
+      "val_bal_acc": 0.4305555555555556,
+      "val_macro_f1": 0.3664022501119913
+    },
+    {
+      "epoch": 10,
+      "train_loss": 1.0379973600308101,
+      "train_bal_acc": 0.4138888888888889,
+      "val_bal_acc": 0.425925925925926,
+      "val_macro_f1": 0.414426391505158
+    },
+    {
+      "epoch": 11,
+      "train_loss": 1.047791247566541,
+      "train_bal_acc": 0.47500000000000003,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.40666346523438257
+    },
+    {
+      "epoch": 12,
+      "train_loss": 1.0336316923300426,
+      "train_bal_acc": 0.44722222222222224,
+      "val_bal_acc": 0.386574074074074,
+      "val_macro_f1": 0.31318165039095275
+    },
+    {
+      "epoch": 13,
+      "train_loss": 1.0643140772978466,
+      "train_bal_acc": 0.44166666666666665,
+      "val_bal_acc": 0.40972222222222227,
+      "val_macro_f1": 0.35681506789347045
+    },
+    {
+      "epoch": 14,
+      "train_loss": 1.036090761423111,
+      "train_bal_acc": 0.5027777777777778,
+      "val_bal_acc": 0.4143518518518518,
+      "val_macro_f1": 0.4084511405208883
+    }
+  ],
+  "param_count": 44515,
+  "train_seconds": 2.935227394104004,
+  "inference_seconds": 0.0010654926300048828,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "d_model": 48,
+      "dropout": 0.3,
+      "family": "transformer",
+      "ff_dim": 128,
+      "num_heads": 4,
+      "num_layers": 2
+    },
+    "name": "iter_0003_island2_regularize_hard",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "transformer iter_0002 was the cautionary tale: train 0.697 vs val 0.398 (gap +0.179) at epoch 39 but best val hit at ep 2. Diagnosis: REGULARIZATION not capacity. Shrink + dropout up: d_model 64->48, num_heads 8->4, num_layers 3->2, dropout 0.1->0.3, epochs 40->15 (early stop equivalent).",
+    "training": {
+      "batch_size": 32,
+      "epochs": 15,
+      "loss": "ce_class_balanced",
+      "lr": 0.0005,
+      "optimizer": "adamw",
+      "seed": 303
+    }
+  }
+}

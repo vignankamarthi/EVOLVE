@@ -1,0 +1,133 @@
+{
+  "name": "iter_0003_island4_more_dilations_again",
+  "best_val_metrics": {
+    "balanced_acc": 0.44675925925925924,
+    "macro_f1": 0.4446571163446746,
+    "per_class_pr": {
+      "NP": [
+        0.5031446540880503,
+        0.5555555555555556
+      ],
+      "AP": [
+        0.42857142857142855,
+        0.3958333333333333
+      ],
+      "HP": [
+        0.4,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        80,
+        27,
+        37
+      ],
+      [
+        40,
+        57,
+        47
+      ],
+      [
+        39,
+        49,
+        56
+      ]
+    ],
+    "auc_ovr": 0.6056295010288065,
+    "ece": 0.10883209102407651
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.44675925925925924,
+    "macro_f1": 0.4446571163446746,
+    "per_class_pr": {
+      "NP": [
+        0.5031446540880503,
+        0.5555555555555556
+      ],
+      "AP": [
+        0.42857142857142855,
+        0.3958333333333333
+      ],
+      "HP": [
+        0.4,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        80,
+        27,
+        37
+      ],
+      [
+        40,
+        57,
+        47
+      ],
+      [
+        39,
+        49,
+        56
+      ]
+    ],
+    "auc_ovr": 0.6056295010288065,
+    "ece": 0.10883209102407651
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": NaN,
+      "train_bal_acc": NaN,
+      "val_bal_acc": 0.44675925925925924,
+      "val_macro_f1": 0.4446571163446746
+    }
+  ],
+  "param_count": 7056,
+  "train_seconds": 0.06741857528686523,
+  "inference_seconds": 0.016039133071899414,
+  "feat_seconds": 1.601236343383789,
+  "device": "cpu",
+  "best_alpha": 10.0,
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "minirocket",
+      "max_dilations_per_kernel": 64,
+      "num_features": 9996,
+      "per_channel": true,
+      "random_state": 42
+    },
+    "model": {
+      "alphas": [
+        0.001,
+        0.003,
+        0.01,
+        0.03,
+        0.1,
+        0.3,
+        1.0,
+        3.0,
+        10.0
+      ],
+      "class_weight": null,
+      "family": "ridge_classifier_cv"
+    },
+    "name": "iter_0003_island4_more_dilations_again",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "MINIROCKET iter_0002 (max_dilations 64) showed ZERO change: 0.4074 -> 0.4074 exact. Hardcoded saturation at this dataset T length. The real fix is quantile-based biases (deferred sprint). For now, try mutation on the classifier side: alpha grid 7-decade -> finer grid in the interesting range, class_weight 'balanced'->None to test class prior.",
+    "training": {
+      "loss": "ridge_regression_cv",
+      "seed": 305
+    }
+  }
+}
