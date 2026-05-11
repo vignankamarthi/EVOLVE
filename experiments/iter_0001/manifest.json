@@ -1,0 +1,10 @@
+{
+  "experiments": [
+    {
+      "run_id": "iter_0001",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0001"
+    }
+  ]
+}

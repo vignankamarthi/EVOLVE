@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.2,
+    "family": "bigru",
+    "hidden_size": 128,
+    "num_layers": 1
+  },
+  "name": "iter_0001_bigru_h128",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0001 parent=seed_bigru (island 1). Single-axis mutation: hidden_size 64 -> 128 (capacity doubling). HIP-B subset-transfer showed all K in [5,25] match-or-exceed baseline 0.414, suggesting BiGRU at h=64 is capacity-limited OR dataset is information-limited. This experiment disambiguates: if h=128 plateaus near 0.42, the ceiling is dataset-bound; if it lifts notably above 0.45, the seed was under-parameterized. Training seed 42 -> 101 avoids retesting baseline exactly. K=10 per HIP-B. Param count ~8k (well under 10M cap). Stage 0 family, all four constraints expected to pass clean.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 101
+  }
+}
