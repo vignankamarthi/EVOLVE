@@ -1,0 +1,39 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "minirocket",
+    "max_dilations_per_kernel": 64,
+    "num_features": 9996,
+    "per_channel": true,
+    "random_state": 42
+  },
+  "model": {
+    "alphas": [
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "class_weight": "balanced",
+    "family": "ridge_classifier_cv"
+  },
+  "name": "iter_0006_island4_change_dilations",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0006 island 4 (ridge_classifier_cv) stochastic mutation. Strategies sampled (rng=60606, attempt 1): ['change_dilations']. Composite scoring active (novelty_alpha=0.45). Building on iter_0005's 3/5 improvements (1d_cnn 0.456, transformer 0.449, multi_stream 0.458). Bigru remained at 0.4769 ceiling. Expanding strategy menus for iter_0006.",
+  "training": {
+    "loss": "ridge_regression_cv",
+    "seed": 604
+  }
+}

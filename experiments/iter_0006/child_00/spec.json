@@ -1,0 +1,31 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "base_channels": 32,
+    "depth": 4,
+    "family": "1d_cnn",
+    "kernel_size": 7,
+    "use_residual": true
+  },
+  "name": "iter_0006_island0_scale_lr_change_kernel",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0006 island 0 (1d_cnn) stochastic mutation. Strategies sampled (rng=60606, attempt 1): ['scale_lr', 'change_kernel']. Composite scoring active (novelty_alpha=0.45). Building on iter_0005's 3/5 improvements (1d_cnn 0.456, transformer 0.449, multi_stream 0.458). Bigru remained at 0.4769 ceiling. Expanding strategy menus for iter_0006.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.003,
+    "optimizer": "adam",
+    "seed": 600
+  }
+}

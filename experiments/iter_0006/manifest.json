@@ -1,0 +1,41 @@
+{
+  "experiments": [
+    {
+      "run_id": "r_00000026",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0006/child_00",
+      "island": 0,
+      "family": "1d_cnn",
+      "strategies": [
+        "scale_lr",
+        "change_kernel"
+      ],
+      "parent": "r_00000001"
+    },
+    {
+      "run_id": "r_00000027",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0006/child_01",
+      "island": 1,
+      "family": "bigru",
+      "strategies": [
+        "swap_optimizer"
+      ],
+      "parent": "r_00000012"
+    },
+    {
+      "run_id": "r_00000028",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0006/child_04",
+      "island": 4,
+      "family": "ridge_classifier_cv",
+      "strategies": [
+        "change_dilations"
+      ],
+      "parent": "r_00000005"
+    }
+  ]
+}
