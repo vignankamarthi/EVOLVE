@@ -1,0 +1,132 @@
+{
+  "name": "iter_0002_island4_more_dilations",
+  "best_val_metrics": {
+    "balanced_acc": 0.40740740740740744,
+    "macro_f1": 0.398338531110459,
+    "per_class_pr": {
+      "NP": [
+        0.4725274725274725,
+        0.5972222222222222
+      ],
+      "AP": [
+        0.38461538461538464,
+        0.2777777777777778
+      ],
+      "HP": [
+        0.3424657534246575,
+        0.3472222222222222
+      ]
+    },
+    "confusion_3x3": [
+      [
+        86,
+        19,
+        39
+      ],
+      [
+        47,
+        40,
+        57
+      ],
+      [
+        49,
+        45,
+        50
+      ]
+    ],
+    "auc_ovr": 0.5896347736625515,
+    "ece": 0.019151242725827074
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.40740740740740744,
+    "macro_f1": 0.398338531110459,
+    "per_class_pr": {
+      "NP": [
+        0.4725274725274725,
+        0.5972222222222222
+      ],
+      "AP": [
+        0.38461538461538464,
+        0.2777777777777778
+      ],
+      "HP": [
+        0.3424657534246575,
+        0.3472222222222222
+      ]
+    },
+    "confusion_3x3": [
+      [
+        86,
+        19,
+        39
+      ],
+      [
+        47,
+        40,
+        57
+      ],
+      [
+        49,
+        45,
+        50
+      ]
+    ],
+    "auc_ovr": 0.5896347736625515,
+    "ece": 0.019151242725827074
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": NaN,
+      "train_bal_acc": NaN,
+      "val_bal_acc": 0.40740740740740744,
+      "val_macro_f1": 0.398338531110459
+    }
+  ],
+  "param_count": 7056,
+  "train_seconds": 0.07335805892944336,
+  "inference_seconds": 0.007944583892822266,
+  "feat_seconds": 1.5728998184204102,
+  "device": "cpu",
+  "best_alpha": 1000.0,
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "minirocket",
+      "max_dilations_per_kernel": 64,
+      "num_features": 9996,
+      "per_channel": true,
+      "random_state": 42
+    },
+    "model": {
+      "alphas": [
+        0.0001,
+        0.001,
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0
+      ],
+      "class_weight": "balanced",
+      "family": "ridge_classifier_cv"
+    },
+    "name": "iter_0002_island4_more_dilations",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "MINIROCKET was 5th (0.407), BELOW baseline. Scale features via max_dilations_per_kernel 32->64 and broaden alpha grid.",
+    "training": {
+      "loss": "ridge_regression_cv",
+      "seed": 205
+    }
+  }
+}

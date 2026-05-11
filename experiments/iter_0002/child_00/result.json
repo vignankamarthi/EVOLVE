@@ -1,0 +1,254 @@
+{
+  "name": "iter_0002_island0_shrink_to_avoid_overfit",
+  "best_val_metrics": {
+    "balanced_acc": 0.4537037037037037,
+    "macro_f1": 0.4429501048888689,
+    "per_class_pr": {
+      "NP": [
+        0.5026737967914439,
+        0.6527777777777778
+      ],
+      "AP": [
+        0.42142857142857143,
+        0.4097222222222222
+      ],
+      "HP": [
+        0.4095238095238095,
+        0.2986111111111111
+      ]
+    },
+    "confusion_3x3": [
+      [
+        94,
+        27,
+        23
+      ],
+      [
+        46,
+        59,
+        39
+      ],
+      [
+        47,
+        54,
+        43
+      ]
+    ],
+    "auc_ovr": 0.6359551826131687,
+    "ece": 0.08278714748168432
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.4328703703703703,
+    "macro_f1": 0.42507993863007415,
+    "per_class_pr": {
+      "NP": [
+        0.5133333333333333,
+        0.5347222222222222
+      ],
+      "AP": [
+        0.40555555555555556,
+        0.5069444444444444
+      ],
+      "HP": [
+        0.3627450980392157,
+        0.2569444444444444
+      ]
+    },
+    "confusion_3x3": [
+      [
+        77,
+        38,
+        29
+      ],
+      [
+        35,
+        73,
+        36
+      ],
+      [
+        38,
+        69,
+        37
+      ]
+    ],
+    "auc_ovr": 0.6214474022633745,
+    "ece": 0.14899916491574708
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1704653998215993,
+      "train_bal_acc": 0.33888888888888885,
+      "val_bal_acc": 0.3287037037037037,
+      "val_macro_f1": 0.23975694444444448
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.1000097393989563,
+      "train_bal_acc": 0.3833333333333333,
+      "val_bal_acc": 0.34722222222222227,
+      "val_macro_f1": 0.29379103675904134
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.0637892584005992,
+      "train_bal_acc": 0.44722222222222224,
+      "val_bal_acc": 0.3796296296296296,
+      "val_macro_f1": 0.3760289933389909
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0389342308044434,
+      "train_bal_acc": 0.5166666666666667,
+      "val_bal_acc": 0.375,
+      "val_macro_f1": 0.3661867368511887
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.0397486339012783,
+      "train_bal_acc": 0.5,
+      "val_bal_acc": 0.4328703703703704,
+      "val_macro_f1": 0.4144930054020963
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.0179885923862457,
+      "train_bal_acc": 0.5166666666666667,
+      "val_bal_acc": 0.4328703703703704,
+      "val_macro_f1": 0.4273036454308401
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.990177313486735,
+      "train_bal_acc": 0.5277777777777778,
+      "val_bal_acc": 0.3958333333333333,
+      "val_macro_f1": 0.3797101449275362
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.9786181747913361,
+      "train_bal_acc": 0.5361111111111111,
+      "val_bal_acc": 0.41435185185185186,
+      "val_macro_f1": 0.41139092585589615
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.9639444202184677,
+      "train_bal_acc": 0.575,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.4084671205414239
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.9622118423382441,
+      "train_bal_acc": 0.5499999999999999,
+      "val_bal_acc": 0.4537037037037037,
+      "val_macro_f1": 0.4429501048888689
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.9930872768163681,
+      "train_bal_acc": 0.525,
+      "val_bal_acc": 0.41666666666666674,
+      "val_macro_f1": 0.4061203782258011
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.9698701252539953,
+      "train_bal_acc": 0.5472222222222223,
+      "val_bal_acc": 0.4398148148148148,
+      "val_macro_f1": 0.421538425560525
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.9722457677125931,
+      "train_bal_acc": 0.561111111111111,
+      "val_bal_acc": 0.4513888888888889,
+      "val_macro_f1": 0.4409408642126782
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.9404212931791941,
+      "train_bal_acc": 0.5222222222222223,
+      "val_bal_acc": 0.41435185185185186,
+      "val_macro_f1": 0.4162518453829039
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.9622908582290014,
+      "train_bal_acc": 0.5833333333333334,
+      "val_bal_acc": 0.4444444444444445,
+      "val_macro_f1": 0.4412378595835648
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.9180704454580942,
+      "train_bal_acc": 0.5472222222222222,
+      "val_bal_acc": 0.40046296296296297,
+      "val_macro_f1": 0.3977617194737817
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.9056790769100189,
+      "train_bal_acc": 0.5388888888888889,
+      "val_bal_acc": 0.38888888888888884,
+      "val_macro_f1": 0.3863068529202076
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.9188287307818731,
+      "train_bal_acc": 0.5444444444444444,
+      "val_bal_acc": 0.4166666666666667,
+      "val_macro_f1": 0.41654706398349645
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.9252936989068985,
+      "train_bal_acc": 0.5055555555555555,
+      "val_bal_acc": 0.3819444444444445,
+      "val_macro_f1": 0.3808581060417993
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.9464198897282282,
+      "train_bal_acc": 0.5388888888888889,
+      "val_bal_acc": 0.4328703703703703,
+      "val_macro_f1": 0.42507993863007415
+    }
+  ],
+  "param_count": 25443,
+  "train_seconds": 2.041745901107788,
+  "inference_seconds": 0.0007598400115966797,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "base_channels": 24,
+      "depth": 3,
+      "family": "1d_cnn",
+      "kernel_size": 7,
+      "use_residual": true
+    },
+    "name": "iter_0002_island0_shrink_to_avoid_overfit",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "1d_cnn was 3rd (0.451) with worst gen_gap (+0.065) and worst ECE (0.13). REDUCE capacity: depth 4->3, base_channels 32->24. Switch to adamw for weight decay. Target: lower gap, better calibration.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 20,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "optimizer": "adamw",
+      "seed": 201
+    }
+  }
+}

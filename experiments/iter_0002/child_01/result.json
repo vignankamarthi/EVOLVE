@@ -1,0 +1,253 @@
+{
+  "name": "iter_0002_island1_h96_layers2",
+  "best_val_metrics": {
+    "balanced_acc": 0.4583333333333333,
+    "macro_f1": 0.4438855346216952,
+    "per_class_pr": {
+      "NP": [
+        0.5104166666666666,
+        0.6805555555555556
+      ],
+      "AP": [
+        0.40397350993377484,
+        0.4236111111111111
+      ],
+      "HP": [
+        0.43820224719101125,
+        0.2708333333333333
+      ]
+    },
+    "confusion_3x3": [
+      [
+        98,
+        30,
+        16
+      ],
+      [
+        49,
+        61,
+        34
+      ],
+      [
+        45,
+        60,
+        39
+      ]
+    ],
+    "auc_ovr": 0.6587094907407408,
+    "ece": 0.04428458807093125
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.4537037037037037,
+    "macro_f1": 0.4484272787017845,
+    "per_class_pr": {
+      "NP": [
+        0.5632911392405063,
+        0.6180555555555556
+      ],
+      "AP": [
+        0.3728813559322034,
+        0.3055555555555556
+      ],
+      "HP": [
+        0.40384615384615385,
+        0.4375
+      ]
+    },
+    "confusion_3x3": [
+      [
+        89,
+        24,
+        31
+      ],
+      [
+        38,
+        44,
+        62
+      ],
+      [
+        31,
+        50,
+        63
+      ]
+    ],
+    "auc_ovr": 0.6573913323045267,
+    "ece": 0.06523035107939332
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1005254189173381,
+      "train_bal_acc": 0.3444444444444444,
+      "val_bal_acc": 0.3912037037037037,
+      "val_macro_f1": 0.3655364402268427
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.0978638927141826,
+      "train_bal_acc": 0.39444444444444443,
+      "val_bal_acc": 0.39814814814814814,
+      "val_macro_f1": 0.3614661157254755
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.0883142948150635,
+      "train_bal_acc": 0.3972222222222222,
+      "val_bal_acc": 0.4259259259259259,
+      "val_macro_f1": 0.41677292752617984
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0901633004347484,
+      "train_bal_acc": 0.4138888888888889,
+      "val_bal_acc": 0.4351851851851851,
+      "val_macro_f1": 0.4057202378979321
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.092004309097926,
+      "train_bal_acc": 0.38611111111111107,
+      "val_bal_acc": 0.4166666666666667,
+      "val_macro_f1": 0.3763183721817765
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.0852136413256328,
+      "train_bal_acc": 0.39444444444444443,
+      "val_bal_acc": 0.3912037037037037,
+      "val_macro_f1": 0.32867641924559426
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.074710836013158,
+      "train_bal_acc": 0.4083333333333334,
+      "val_bal_acc": 0.4189814814814814,
+      "val_macro_f1": 0.37201955750342847
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.0812332133452098,
+      "train_bal_acc": 0.43333333333333335,
+      "val_bal_acc": 0.42824074074074076,
+      "val_macro_f1": 0.3952538372746739
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.06216366092364,
+      "train_bal_acc": 0.44166666666666665,
+      "val_bal_acc": 0.4398148148148148,
+      "val_macro_f1": 0.40567657958962305
+    },
+    {
+      "epoch": 9,
+      "train_loss": 1.047183056672414,
+      "train_bal_acc": 0.4388888888888889,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.3752128757083026
+    },
+    {
+      "epoch": 10,
+      "train_loss": 1.062718242406845,
+      "train_bal_acc": 0.45555555555555555,
+      "val_bal_acc": 0.4351851851851851,
+      "val_macro_f1": 0.4042357462863948
+    },
+    {
+      "epoch": 11,
+      "train_loss": 1.000195895632108,
+      "train_bal_acc": 0.5083333333333333,
+      "val_bal_acc": 0.44675925925925924,
+      "val_macro_f1": 0.4043106925124807
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.9699623336394628,
+      "train_bal_acc": 0.5,
+      "val_bal_acc": 0.4421296296296297,
+      "val_macro_f1": 0.41346014146301435
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.9879053433736166,
+      "train_bal_acc": 0.4611111111111111,
+      "val_bal_acc": 0.4421296296296296,
+      "val_macro_f1": 0.41752486290547447
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.9664431114991506,
+      "train_bal_acc": 0.5194444444444445,
+      "val_bal_acc": 0.4467592592592593,
+      "val_macro_f1": 0.4009305292171368
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.9540868053833643,
+      "train_bal_acc": 0.4749999999999999,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.3425456755244068
+    },
+    {
+      "epoch": 16,
+      "train_loss": 1.0047281483809154,
+      "train_bal_acc": 0.5472222222222222,
+      "val_bal_acc": 0.4583333333333333,
+      "val_macro_f1": 0.4438855346216952
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.9508293072382609,
+      "train_bal_acc": 0.5305555555555556,
+      "val_bal_acc": 0.4421296296296296,
+      "val_macro_f1": 0.4165929915885453
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.9287249396244684,
+      "train_bal_acc": 0.5277777777777778,
+      "val_bal_acc": 0.4398148148148149,
+      "val_macro_f1": 0.39320676608812205
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.9214233706394831,
+      "train_bal_acc": 0.5666666666666668,
+      "val_bal_acc": 0.4537037037037037,
+      "val_macro_f1": 0.4484272787017845
+    }
+  ],
+  "param_count": 226371,
+  "train_seconds": 3.3046178817749023,
+  "inference_seconds": 0.0012738704681396484,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "dropout": 0.2,
+      "family": "bigru",
+      "hidden_size": 96,
+      "num_layers": 2
+    },
+    "name": "iter_0002_island1_h96_layers2",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "bigru was 1st (0.458). Compound width AND depth: hidden_size 64->96, num_layers 1->2. Smaller capacity bump than h128 to test diminishing returns.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 20,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "optimizer": "adam",
+      "seed": 202
+    }
+  }
+}
