@@ -1,0 +1,129 @@
+{
+  "name": "iter_0009_child04_island4_ridge_cl",
+  "best_val_metrics": {
+    "balanced_acc": 0.4305555555555556,
+    "macro_f1": 0.43033623964423323,
+    "per_class_pr": {
+      "NP": [
+        0.48299319727891155,
+        0.4930555555555556
+      ],
+      "AP": [
+        0.42142857142857143,
+        0.4097222222222222
+      ],
+      "HP": [
+        0.38620689655172413,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        71,
+        31,
+        42
+      ],
+      [
+        38,
+        59,
+        47
+      ],
+      [
+        38,
+        50,
+        56
+      ]
+    ],
+    "auc_ovr": 0.5962577160493828,
+    "ece": 0.1656156176770175
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.4305555555555556,
+    "macro_f1": 0.43033623964423323,
+    "per_class_pr": {
+      "NP": [
+        0.48299319727891155,
+        0.4930555555555556
+      ],
+      "AP": [
+        0.42142857142857143,
+        0.4097222222222222
+      ],
+      "HP": [
+        0.38620689655172413,
+        0.3888888888888889
+      ]
+    },
+    "confusion_3x3": [
+      [
+        71,
+        31,
+        42
+      ],
+      [
+        38,
+        59,
+        47
+      ],
+      [
+        38,
+        50,
+        56
+      ]
+    ],
+    "auc_ovr": 0.5962577160493828,
+    "ece": 0.1656156176770175
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": NaN,
+      "train_bal_acc": NaN,
+      "val_bal_acc": 0.4305555555555556,
+      "val_macro_f1": 0.43033623964423323
+    }
+  ],
+  "param_count": 7056,
+  "train_seconds": 0.07071185111999512,
+  "inference_seconds": 0.006047964096069336,
+  "feat_seconds": 1.6041889190673828,
+  "device": "cpu",
+  "best_alpha": 3.0,
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "minirocket",
+      "max_dilations_per_kernel": 64,
+      "num_features": 9996,
+      "per_channel": true,
+      "random_state": 42
+    },
+    "model": {
+      "alphas": [
+        0.001,
+        0.003,
+        0.03,
+        1.0,
+        3.0
+      ],
+      "class_weight": "balanced",
+      "family": "ridge_classifier_cv"
+    },
+    "name": "iter_0009_child04_island4_ridge_cl",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0009 island 4 (ridge_classifier_cv, pass A) after Level 2 2nd fire (novelty_alpha 0.45->0.675). Strategies: ['toggle_class_weight']. ",
+    "training": {
+      "loss": "ridge_regression_cv",
+      "seed": 904
+    }
+  }
+}

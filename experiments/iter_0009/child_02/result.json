@@ -1,0 +1,255 @@
+{
+  "name": "iter_0009_child02_island2_transfor",
+  "best_val_metrics": {
+    "balanced_acc": 0.4398148148148148,
+    "macro_f1": 0.43657019325172414,
+    "per_class_pr": {
+      "NP": [
+        0.5030674846625767,
+        0.5694444444444444
+      ],
+      "AP": [
+        0.4222222222222222,
+        0.3958333333333333
+      ],
+      "HP": [
+        0.3805970149253731,
+        0.3541666666666667
+      ]
+    },
+    "confusion_3x3": [
+      [
+        82,
+        29,
+        33
+      ],
+      [
+        37,
+        57,
+        50
+      ],
+      [
+        44,
+        49,
+        51
+      ]
+    ],
+    "auc_ovr": 0.6014338991769547,
+    "ece": 0.06049998601277671
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.3773148148148148,
+    "macro_f1": 0.3625981620718463,
+    "per_class_pr": {
+      "NP": [
+        0.40625,
+        0.5416666666666666
+      ],
+      "AP": [
+        0.3717948717948718,
+        0.4027777777777778
+      ],
+      "HP": [
+        0.32142857142857145,
+        0.1875
+      ]
+    },
+    "confusion_3x3": [
+      [
+        78,
+        38,
+        28
+      ],
+      [
+        57,
+        58,
+        29
+      ],
+      [
+        57,
+        60,
+        27
+      ]
+    ],
+    "auc_ovr": 0.5614390432098766,
+    "ece": 0.19333314667973256
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 1.1139439741770427,
+      "train_bal_acc": 0.3833333333333333,
+      "val_bal_acc": 0.3958333333333333,
+      "val_macro_f1": 0.3364763279579221
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.1598019301891327,
+      "train_bal_acc": 0.4055555555555555,
+      "val_bal_acc": 0.40509259259259256,
+      "val_macro_f1": 0.3441065954615814
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.104713961482048,
+      "train_bal_acc": 0.35555555555555557,
+      "val_bal_acc": 0.34027777777777773,
+      "val_macro_f1": 0.2518062982768865
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.0869594564040501,
+      "train_bal_acc": 0.4138888888888889,
+      "val_bal_acc": 0.40277777777777773,
+      "val_macro_f1": 0.33826575084550753
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.0608652134736378,
+      "train_bal_acc": 0.4361111111111111,
+      "val_bal_acc": 0.4398148148148148,
+      "val_macro_f1": 0.43657019325172414
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.0671516557534535,
+      "train_bal_acc": 0.4361111111111111,
+      "val_bal_acc": 0.4212962962962963,
+      "val_macro_f1": 0.3924394245871674
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.0670668383439381,
+      "train_bal_acc": 0.4611111111111111,
+      "val_bal_acc": 0.375,
+      "val_macro_f1": 0.3675331069603666
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.05841929713885,
+      "train_bal_acc": 0.46388888888888885,
+      "val_bal_acc": 0.41203703703703703,
+      "val_macro_f1": 0.36874134953044396
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.0363539506991704,
+      "train_bal_acc": 0.46388888888888885,
+      "val_bal_acc": 0.3912037037037037,
+      "val_macro_f1": 0.3849580744331942
+    },
+    {
+      "epoch": 9,
+      "train_loss": 1.0286462903022766,
+      "train_bal_acc": 0.4861111111111111,
+      "val_bal_acc": 0.40277777777777773,
+      "val_macro_f1": 0.40143986448334273
+    },
+    {
+      "epoch": 10,
+      "train_loss": 1.0386780599753063,
+      "train_bal_acc": 0.4694444444444445,
+      "val_bal_acc": 0.3611111111111111,
+      "val_macro_f1": 0.33311712337500304
+    },
+    {
+      "epoch": 11,
+      "train_loss": 1.0266099572181702,
+      "train_bal_acc": 0.4694444444444445,
+      "val_bal_acc": 0.38425925925925924,
+      "val_macro_f1": 0.3482781878724071
+    },
+    {
+      "epoch": 12,
+      "train_loss": 1.016878013809522,
+      "train_bal_acc": 0.45555555555555555,
+      "val_bal_acc": 0.4074074074074074,
+      "val_macro_f1": 0.3826425968302398
+    },
+    {
+      "epoch": 13,
+      "train_loss": 1.0158782700697582,
+      "train_bal_acc": 0.4749999999999999,
+      "val_bal_acc": 0.3703703703703704,
+      "val_macro_f1": 0.3671507150790385
+    },
+    {
+      "epoch": 14,
+      "train_loss": 1.0028609484434128,
+      "train_bal_acc": 0.5111111111111111,
+      "val_bal_acc": 0.3703703703703704,
+      "val_macro_f1": 0.3581105719813458
+    },
+    {
+      "epoch": 15,
+      "train_loss": 1.0223218550284703,
+      "train_bal_acc": 0.4694444444444445,
+      "val_bal_acc": 0.36574074074074076,
+      "val_macro_f1": 0.331830528887241
+    },
+    {
+      "epoch": 16,
+      "train_loss": 1.010735626022021,
+      "train_bal_acc": 0.5194444444444444,
+      "val_bal_acc": 0.3865740740740741,
+      "val_macro_f1": 0.36348824177092925
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.9861710866292318,
+      "train_bal_acc": 0.5166666666666667,
+      "val_bal_acc": 0.3773148148148148,
+      "val_macro_f1": 0.36117569690886403
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.9581926067670187,
+      "train_bal_acc": 0.5444444444444444,
+      "val_bal_acc": 0.3587962962962963,
+      "val_macro_f1": 0.3537335924356517
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.9564645340045294,
+      "train_bal_acc": 0.5083333333333333,
+      "val_bal_acc": 0.3773148148148148,
+      "val_macro_f1": 0.3625981620718463
+    }
+  ],
+  "param_count": 134403,
+  "train_seconds": 7.056272983551025,
+  "inference_seconds": 0.0011212825775146484,
+  "device": "cuda",
+  "spec": {
+    "data": {
+      "subset_seed": 0,
+      "subset_size": 10
+    },
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "d_model": 64,
+      "dropout": 0.1,
+      "family": "transformer",
+      "ff_dim": 128,
+      "num_heads": 4,
+      "num_layers": 4
+    },
+    "name": "iter_0009_child02_island2_transfor",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0009 island 2 (transformer, pass A) after Level 2 2nd fire (novelty_alpha 0.45->0.675). Strategies: ['swap_optimizer']. ",
+    "training": {
+      "batch_size": 32,
+      "epochs": 20,
+      "loss": "ce_class_balanced",
+      "lr": 0.0005,
+      "optimizer": "adamw",
+      "seed": 902
+    }
+  }
+}
