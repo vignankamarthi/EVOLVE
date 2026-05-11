@@ -16,13 +16,10 @@ papers/
 # Cluster outputs (result.json, trace.jsonl, checkpoints) stay ignored.
 experiments/*
 !experiments/iter_*/
-# Each iter_NNNN is a batch of child_NN subdirs. Track spec+run+manifest,
-# ignore cluster outputs.
-experiments/iter_*/child_*/result.json
-experiments/iter_*/child_*/trace.jsonl
-experiments/iter_*/child_*/checkpoints/
-experiments/iter_*/**/result.json
-experiments/iter_*/**/trace.jsonl
+# Canonical workflow: experiment artifacts travel ONLY via git push/pull.
+# Cluster commits result.json + trace.jsonl back; Mac pulls; Claude reads
+# locally. NO terminal forensics, NO paste-text-into-chat (ANTIPATTERN 11a).
+# Only heavy weights (checkpoints/) stay out of git.
 experiments/iter_*/**/checkpoints/
 
 # Python
