@@ -217,8 +217,8 @@
     }
   ],
   "param_count": 27267,
-  "train_seconds": 1.7054944038391113,
-  "inference_seconds": 0.0009140968322753906,
+  "train_seconds": 1.6716127395629883,
+  "inference_seconds": 0.0009026527404785156,
   "device": "cuda",
   "spec": {
     "data": {
