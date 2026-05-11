@@ -1,6 +1,6 @@
 """Constraint layer.
 
-Four mechanisms (FRAMEWORK.md Section 4) chained at the loop driver. Each
+Three mechanisms (FRAMEWORK.md Section 4) chained at the loop driver. Each
 returns either None (clean) or a ConstraintViolation (rejected). The loop
 asks the mutation operator to regenerate when any constraint fires.
 
@@ -9,11 +9,15 @@ asks the mutation operator to regenerate when any constraint fires.
       or exceed resource caps. (Challenge rules, ANTIPATTERNS 1.)
   4.2 AST tabu
       Refuse near-duplicate structural fingerprints within last K accepted programs.
-  4.3 Curriculum unlock
-      Early gens locked to simple primitives. Complex unlocks above threshold.
-      Gated by HIP-I. Thresholds locked at FRAMEWORK.md Section 9 decision 3.
-  4.4 Lineage inbreeding cap
+  4.3 Lineage inbreeding cap
       Reject child whose ancestry traces > N consecutive same-parent gens.
+
+NOTE: the old curriculum_unlock filter (formerly 4.3) was removed on
+2026-05-11 per Vignan's directive. Threshold-based unlocking proved brittle
+for a dataset with a hard ceiling well below the 0.55 stage-1 threshold; we
+were never going to unlock complex architectures. All families with entry
+points are now eligible from iter 1. Pareto fitness handles param-count
+vs. accuracy tradeoff in lieu of explicit gating.
 """
 from dataclasses import dataclass
 
@@ -34,30 +38,6 @@ BANNED_IMPORTS = frozenset({
     "gdown",
     "datasets.load_dataset",
 })
-
-
-# Curriculum stages. Decision 3 (2026-05-10) defined the stages; HIP-C
-# (2026-05-11) cut classical ML families (lr / rf / xgb / lightgbm / catch22_gbm)
-# from the allowed set because hand-crafted-feature + tree pipelines have
-# underperformed on this task in prior work. Mutations proposing these families
-# are now treated as "not in table" by curriculum_unlock and rejected.
-# ridge_classifier_cv stays because MINIROCKET pairs random conv kernels with
-# it (neural-adjacent feature extraction, classical decision boundary).
-DEFAULT_CURRICULUM_THRESHOLDS = {
-    "cnn": 0,
-    "1d_cnn": 0,
-    "bigru": 0,
-    "rnn": 0,
-    "gru": 0,
-    "lstm": 0,
-    "ridge_classifier_cv": 0,
-    "transformer": 1,
-    "multi_stream_attention": 1,
-    "mamba": 2,
-    "ssm": 2,
-    "neural_ode": 2,
-    "hybrid": 2,
-}
 
 
 def _walk_strings(obj):
@@ -121,31 +101,6 @@ def ast_tabu(spec_fingerprint: str,
         return ConstraintViolation(
             rule="ast_tabu",
             detail=f"fingerprint {spec_fingerprint[:12]}... appears in recent {len(recent_fingerprints)} accepted programs",
-        )
-    return None
-
-
-def curriculum_unlock(spec: dict, current_stage: int,
-                      threshold_table: dict[str, int] | None = None
-                      ) -> ConstraintViolation | None:
-    """Reject if spec's model family is locked at current_stage.
-
-    `threshold_table` maps family -> minimum stage required to use it.
-    Defaults to DEFAULT_CURRICULUM_THRESHOLDS. If a family is missing from
-    the table, it is treated as locked (conservative).
-    """
-    table = threshold_table if threshold_table is not None else DEFAULT_CURRICULUM_THRESHOLDS
-    family = spec.get("model", {}).get("family")
-    required = table.get(family)
-    if required is None:
-        return ConstraintViolation(
-            rule="curriculum_unlock",
-            detail=f"family {family!r} not in curriculum table; treated as locked",
-        )
-    if current_stage < required:
-        return ConstraintViolation(
-            rule="curriculum_unlock",
-            detail=f"family {family!r} requires stage {required}, current is {current_stage}",
         )
     return None
 

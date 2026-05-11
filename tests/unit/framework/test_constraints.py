@@ -7,24 +7,15 @@ def test_module_imports():
     assert "transformers.from_pretrained" in constraints.BANNED_IMPORTS
     assert callable(constraints.rule_guards)
     assert callable(constraints.ast_tabu)
-    assert callable(constraints.curriculum_unlock)
     assert callable(constraints.lineage_cap)
 
 
-def test_curriculum_table_matches_design_decision():
-    """FRAMEWORK.md Section 9 decision 3: stage 0 simple, stage 1 transformer,
-    stage 2 mamba/ssm/neural_ode/hybrid."""
-    t = constraints.DEFAULT_CURRICULUM_THRESHOLDS
-    assert t["1d_cnn"] == 0
-    assert t["bigru"] == 0
-    assert t["ridge_classifier_cv"] == 0
-    assert t["transformer"] == 1
-    assert t["mamba"] == 2
-    # HIP-C cut: classical-ML model families are NOT in the table
-    assert "xgb" not in t
-    assert "lightgbm" not in t
-    assert "lr" not in t
-    assert "rf" not in t
+def test_curriculum_unlock_removed_from_module():
+    """Curriculum was scorched-earth removed on 2026-05-11. The function no
+    longer exists; all families with entry points are eligible from iter 1.
+    """
+    assert not hasattr(constraints, "curriculum_unlock")
+    assert not hasattr(constraints, "DEFAULT_CURRICULUM_THRESHOLDS")
 
 
 # ---------- rule_guards ----------
@@ -81,43 +72,6 @@ def test_ast_tabu_passes_when_fingerprint_novel():
 
 def test_ast_tabu_handles_empty_recent_list():
     v = constraints.ast_tabu("hash_x", recent_fingerprints=[])
-    assert v is None
-
-
-# ---------- curriculum_unlock ----------
-
-def test_curriculum_unlock_blocks_advanced_at_stage_zero(sample_program_spec):
-    spec = dict(sample_program_spec)
-    spec["model"] = {**spec["model"], "family": "transformer"}
-    v = constraints.curriculum_unlock(spec, current_stage=0)
-    assert v is not None
-    assert v.rule == "curriculum_unlock"
-
-
-def test_curriculum_unlock_allows_stage_zero_family_at_stage_zero(sample_program_spec):
-    v = constraints.curriculum_unlock(sample_program_spec, current_stage=0)
-    assert v is None
-
-
-def test_curriculum_unlock_allows_advanced_after_unlock(sample_program_spec):
-    spec = dict(sample_program_spec)
-    spec["model"] = {**spec["model"], "family": "transformer"}
-    v = constraints.curriculum_unlock(spec, current_stage=1)
-    assert v is None
-
-
-def test_curriculum_unlock_rejects_unknown_family(sample_program_spec):
-    spec = dict(sample_program_spec)
-    spec["model"] = {**spec["model"], "family": "alien_arch"}
-    v = constraints.curriculum_unlock(spec, current_stage=2)
-    assert v is not None
-
-
-def test_curriculum_unlock_accepts_custom_threshold_table(sample_program_spec):
-    spec = dict(sample_program_spec)
-    spec["model"] = {**spec["model"], "family": "alien_arch"}
-    v = constraints.curriculum_unlock(spec, current_stage=1,
-                                      threshold_table={"alien_arch": 0})
     assert v is None
 
 

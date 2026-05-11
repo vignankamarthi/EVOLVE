@@ -36,7 +36,6 @@ DEFAULT_GENOME = {
     "max_params": 10_000_000,
     "max_train_seconds": 1800,
     "ast_tabu_k": 50,
-    "curriculum_threshold": 0.55,
     "lineage_cap": 5,
     "migration_patience": 10,
     "critic_pop_size": 30,
@@ -182,16 +181,17 @@ def test_drop_island_blocked_at_floor():
 
 
 def test_set_threshold_in_range():
+    # novelty_alpha is a numeric genome field with guard (0.0, 0.8)
     mut = set_threshold("hash_p", DEFAULT_GENOME,
-                       name="curriculum_threshold", value=0.65)
-    assert mut.parameter_changes["curriculum_threshold"] == 0.65
+                       name="novelty_alpha", value=0.5)
+    assert mut.parameter_changes["novelty_alpha"] == 0.5
     assert "SET_THRESHOLD" in mut.description
 
 
 def test_set_threshold_rejected_out_of_range():
     with pytest.raises(ValueError):
         set_threshold("hash_p", DEFAULT_GENOME,
-                      name="curriculum_threshold", value=0.95)
+                      name="novelty_alpha", value=1.5)
 
 
 def test_set_axis_weight_updates_pareto_dict():

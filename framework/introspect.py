@@ -42,7 +42,6 @@ GENOME_RULE_GUARDS: dict[str, tuple[float, float]] = {
     "max_params": (10_000, 100_000_000),
     "max_train_seconds": (60, 28_800),
     "ast_tabu_k": (5, 200),
-    "curriculum_threshold": (0.4, 0.85),
     "lineage_cap": (1, 20),
     "migration_patience": (3, 50),
     "critic_pop_size": (5, 100),
@@ -298,7 +297,7 @@ def apply_genome_mutation(mutation: GenomeMutation,
 # --- propose_mutation: ledger -> typed mutation ---
 
 
-_CONSTRAINT_RULES = ("ast_tabu", "lineage_cap", "curriculum_unlock", "rule_guards")
+_CONSTRAINT_RULES = ("ast_tabu", "lineage_cap", "rule_guards")
 
 
 def _entropy_ratio(ledger, window: int) -> float:
@@ -334,9 +333,6 @@ def propose_mutation(ledger, current_genome: dict, current_iter: int,
             return scale_param(parent_hash, current_genome, "ast_tabu_k", 0.5)
         if top_rule == "lineage_cap":
             return scale_param(parent_hash, current_genome, "lineage_cap", 1.5)
-        if top_rule == "curriculum_unlock":
-            return scale_param(parent_hash, current_genome,
-                               "curriculum_threshold", 0.9)
         if top_rule == "rule_guards":
             return scale_param(parent_hash, current_genome, "max_params", 1.5)
 
