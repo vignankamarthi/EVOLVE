@@ -18,7 +18,7 @@
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "bigru was 1st (0.458). Compound the iter_0001-old insights (width AND depth helped tied): hidden_size 64->96, num_layers 1->2. Smaller capacity bump than h128 to test diminishing returns.",
+  "reasoning_summary": "bigru was 1st (0.458). Compound width AND depth: hidden_size 64->96, num_layers 1->2. Smaller capacity bump than h128 to test diminishing returns.",
   "training": {
     "batch_size": 32,
     "epochs": 20,

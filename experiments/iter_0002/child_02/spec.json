@@ -20,7 +20,7 @@
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "transformer was 4th (0.419) with under-fit train (gap +0.017). Needs more capacity AND more training time: num_layers 2->3, num_heads 4->8, epochs 20->40. If transformer is going to compete, this is its shot.",
+  "reasoning_summary": "transformer was 4th (0.419), under-fit train (gap +0.017). More capacity AND more time: num_layers 2->3, num_heads 4->8, epochs 20->40.",
   "training": {
     "batch_size": 32,
     "epochs": 40,

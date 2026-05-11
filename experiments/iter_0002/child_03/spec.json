@@ -19,7 +19,7 @@
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "multi_stream_bigru was 2nd (0.456) with BEST generalization (gap +0.002). Give it more room: per_channel_hidden 32->48.",
+  "reasoning_summary": "multi_stream_bigru was 2nd (0.456) with BEST gen_gap (+0.002). Widen: per_channel_hidden 32->48.",
   "training": {
     "batch_size": 32,
     "epochs": 20,

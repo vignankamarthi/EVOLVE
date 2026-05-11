@@ -32,7 +32,7 @@
     "normalize": "per_channel_zscore",
     "padding": "right_zero_to_global_max"
   },
-  "reasoning_summary": "MINIROCKET was 5th (0.407), BELOW baseline. Bias=0 simplification may be hurting. Until quantile-bias upgrade lands, scale up by doubling dilations: 32->64 max_dilations_per_kernel (more features). Also bump alpha grid lower-end for more options.",
+  "reasoning_summary": "MINIROCKET was 5th (0.407), BELOW baseline. Scale features via max_dilations_per_kernel 32->64 and broaden alpha grid.",
   "training": {
     "loss": "ridge_regression_cv",
     "seed": 205
