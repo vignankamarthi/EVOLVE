@@ -9,7 +9,7 @@ Exercises FRAMEWORK.md Section 7 + Section 11:
 
 Plus a healthy-state regression (no fire) and a smoke test that
 loop.record_mutation_attempt + record_constraint_check write through the
-ledger AND mirror to <experiments_root>/<run_id>/trace.jsonl.
+ledger AND optionally mirror to <run_dir>/trace.jsonl when run_dir is passed.
 """
 from framework import introspect, ledger, loop
 
@@ -49,7 +49,7 @@ def _populate(led, n_iters, fitness_fn, fingerprint_fn, constraint_fn):
 
 
 def test_level2_full_cycle_stagnation(tmp_db_path, tmp_path):
-    led = ledger.Ledger(tmp_db_path, experiments_root=tmp_path)
+    led = ledger.Ledger(tmp_db_path)
     led.init_schema()
     _populate(
         led, n_iters=25,
@@ -80,7 +80,7 @@ def test_level2_full_cycle_stagnation(tmp_db_path, tmp_path):
 
 
 def test_level2_no_fire_when_healthy(tmp_db_path, tmp_path):
-    led = ledger.Ledger(tmp_db_path, experiments_root=tmp_path)
+    led = ledger.Ledger(tmp_db_path)
     led.init_schema()
     _populate(
         led, n_iters=25,
@@ -97,7 +97,7 @@ def test_level2_no_fire_when_healthy(tmp_db_path, tmp_path):
 
 
 def test_level2_over_rejection_routes_to_offending_rule(tmp_db_path, tmp_path):
-    led = ledger.Ledger(tmp_db_path, experiments_root=tmp_path)
+    led = ledger.Ledger(tmp_db_path)
     led.init_schema()
     _populate(
         led, n_iters=25,
@@ -116,13 +116,16 @@ def test_level2_over_rejection_routes_to_offending_rule(tmp_db_path, tmp_path):
 
 
 def test_loop_record_helpers_write_to_ledger_and_jsonl(tmp_db_path, tmp_path):
+    """record_mutation_attempt with run_dir lands JSONL next to spec.json."""
     spec = {"model": {"family": "bigru"}}
+    run_dir = tmp_path / "iter_0001" / "child_00"
+    run_dir.mkdir(parents=True)
     loop.record_mutation_attempt(
         iteration=0, run_id="r_00000001", parent_run_ids=[],
         prompt_context="(seed)", child_spec=spec,
         fingerprint="fp_seed", reasoning_summary="initial seed",
         accepted=True,
-        ledger_path=tmp_db_path, experiments_root=tmp_path,
+        run_dir=run_dir, ledger_path=tmp_db_path,
     )
     loop.record_constraint_check(
         iteration=0, fingerprint="fp_seed",
@@ -135,6 +138,5 @@ def test_loop_record_helpers_write_to_ledger_and_jsonl(tmp_db_path, tmp_path):
     assert len(traces) == 1
     assert traces[0]["fingerprint"] == "fp_seed"
     assert led.constraint_rejection_rate(window=10) == 0.0
-    jsonl = tmp_path / "r_00000001" / "trace.jsonl"
-    assert jsonl.exists()
+    assert (run_dir / "trace.jsonl").exists()
     led.close()

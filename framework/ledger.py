@@ -16,9 +16,9 @@ Tables:
 
 All writes are atomic (autocommit, WAL journal). Loop is resumable from any iteration.
 
-`mutation_traces` writes also mirror to `<experiments_root>/<run_id>/trace.jsonl`
-when `experiments_root` is provided to the Ledger constructor. JSONL is the
-durable write-ahead log; SQLite is the queryable materialized view for Level 2.
+`mutation_traces` writes optionally mirror to `<run_dir>/trace.jsonl` when
+`run_dir` is passed to `write_mutation_trace`. JSONL is the durable write-ahead
+log; SQLite is the queryable materialized view for Level 2.
 
 Spec: FRAMEWORK.md Section 6 (meta_state), Section 7 (framework_mutations),
 Section 11 (mutation_traces, constraint_events, query helpers).
@@ -151,12 +151,9 @@ def _hydrate_experiment(row: sqlite3.Row) -> dict[str, Any]:
 class Ledger:
     """SQLite-backed experiment ledger. See module docstring for schema."""
 
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH,
-                 experiments_root: Path | None = None):
+    def __init__(self, db_path: Path = DEFAULT_DB_PATH):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.experiments_root = (
-            Path(experiments_root) if experiments_root is not None else None)
         self._conn = sqlite3.connect(str(self.db_path), isolation_level=None)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
@@ -239,13 +236,20 @@ class Ledger:
                              child_spec: dict,
                              fingerprint: str,
                              reasoning_summary: str,
-                             accepted: bool) -> None:
+                             accepted: bool,
+                             run_dir: Path | None = None) -> None:
         """Persist one mutation trace.
 
-        SQLite write is atomic via the autocommit connection. When
-        `experiments_root` was provided at construction time, the same
-        payload is appended to `<experiments_root>/<run_id>/trace.jsonl`
-        (creating the run directory if needed).
+        SQLite write is atomic via the autocommit connection. If `run_dir`
+        is provided, the same payload is appended to `<run_dir>/trace.jsonl`
+        (alongside spec.json + run.py + result.json). This is the canonical
+        Section 11 observability layout: every artifact for one run lives in
+        one directory.
+
+        Note: the previous experiments_root-based sentinel naming
+        (`experiments_root / run_id / trace.jsonl`) was removed 2026-05-11
+        because run_id is not the same as run_dir under the iter_NNNN/child_MM/
+        layout. Pass `run_dir` explicitly.
         """
         created_at = time.time()
         payload = {
@@ -276,8 +280,8 @@ class Ledger:
                 created_at,
             ),
         )
-        if self.experiments_root is not None:
-            run_dir = self.experiments_root / run_id
+        if run_dir is not None:
+            run_dir = Path(run_dir)
             run_dir.mkdir(parents=True, exist_ok=True)
             with (run_dir / "trace.jsonl").open("a") as f:
                 f.write(json.dumps(payload) + "\n")

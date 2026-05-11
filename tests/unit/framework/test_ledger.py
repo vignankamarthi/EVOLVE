@@ -144,22 +144,24 @@ def test_write_mutation_trace_round_trip(tmp_db_path, sample_program_spec):
 
 
 def test_write_mutation_trace_jsonl_mirror(tmp_db_path, tmp_path, sample_program_spec):
+    """When a run_dir is passed, JSONL is written there (alongside spec.json)."""
     import json as _json
-    experiments_root = tmp_path / "experiments"
-    led = ledger.Ledger(tmp_db_path, experiments_root=experiments_root)
+    led = ledger.Ledger(tmp_db_path)
     led.init_schema()
-    rid = "r_00000005"
+    run_dir = tmp_path / "iter_0001" / "child_00"
+    run_dir.mkdir(parents=True)
     led.write_mutation_trace(
         iteration=7,
-        run_id=rid,
+        run_id="r_00000005",
         parent_run_ids=[],
         prompt_context="(p)",
         child_spec=sample_program_spec,
         fingerprint="fp1",
         reasoning_summary="seed",
         accepted=True,
+        run_dir=run_dir,
     )
-    jsonl = experiments_root / rid / "trace.jsonl"
+    jsonl = run_dir / "trace.jsonl"
     assert jsonl.exists()
     lines = jsonl.read_text().strip().splitlines()
     assert len(lines) == 1
@@ -167,6 +169,21 @@ def test_write_mutation_trace_jsonl_mirror(tmp_db_path, tmp_path, sample_program
     assert payload["iteration"] == 7
     assert payload["fingerprint"] == "fp1"
     assert payload["accepted"] is True
+    led.close()
+
+
+def test_write_mutation_trace_no_jsonl_when_run_dir_omitted(tmp_db_path, sample_program_spec):
+    """Without run_dir argument, only the SQLite row is written; no JSONL."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    led.write_mutation_trace(
+        iteration=1, run_id="r_00000001", parent_run_ids=[],
+        prompt_context="", child_spec=sample_program_spec,
+        fingerprint="fp1", reasoning_summary="", accepted=True,
+    )
+    # No file should have been created anywhere
+    traces = led.recent_mutation_traces(window=5)
+    assert len(traces) == 1
     led.close()
 
 

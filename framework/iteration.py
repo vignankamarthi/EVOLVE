@@ -44,7 +44,8 @@ _SEED_PLACEHOLDER_FITNESS: dict[str, Any] = {
 
 
 def seed_population(ledger: Ledger, seed_specs: list[dict],
-                    island_count: int) -> list[str]:
+                    island_count: int,
+                    run_dirs: list[Path] | None = None) -> list[str]:
     """Place one seed per island into the ledger.
 
     Returns the list of allocated run_ids in island order (run_ids[i] is on
@@ -54,6 +55,9 @@ def seed_population(ledger: Ledger, seed_specs: list[dict],
       - An experiments row (parent_id=None, island_id=i)
       - A placeholder fitness (so tournament selection has a basis)
       - A mutation_traces row (so it counts in the global child counter)
+
+    If `run_dirs[i]` is provided, the seed's trace.jsonl is mirrored there
+    (alongside spec.json + run.py per the Section 11 canonical layout).
     """
     if island_count < 1:
         raise ValueError(f"island_count must be >= 1, got {island_count}")
@@ -66,6 +70,7 @@ def seed_population(ledger: Ledger, seed_specs: list[dict],
         ledger.write_experiment(rid, spec, parent_id=None, island_id=i)
         ledger.write_result(rid, _SEED_PLACEHOLDER_FITNESS)
         # Each seed also gets a mutation_trace so the global counter advances
+        rd = run_dirs[i] if run_dirs and i < len(run_dirs) else None
         ledger.write_mutation_trace(
             iteration=i + 1, run_id=rid, parent_run_ids=[],
             prompt_context="(seed population, iter 0)",
@@ -77,6 +82,7 @@ def seed_population(ledger: Ledger, seed_specs: list[dict],
                 f"Placeholder fitness; real value lands after cluster train."
             ),
             accepted=True,
+            run_dir=rd,
         )
         run_ids.append(rid)
     return run_ids

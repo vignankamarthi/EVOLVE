@@ -161,13 +161,15 @@ def record_mutation_attempt(iteration: int, run_id: str,
                             fingerprint: str,
                             reasoning_summary: str,
                             accepted: bool,
+                            run_dir: Path | None = None,
                             ledger_path: Path = Path("ledger/experiments.db"),
-                            experiments_root: Path = Path("experiments"),
                             ) -> None:
-    """Persist a mutation_trace row (SQLite + JSONL mirror). Called by the
-    Claude Code session each iteration after a child spec is emitted.
+    """Persist a mutation_trace row (SQLite + optional JSONL mirror at
+    `<run_dir>/trace.jsonl`). Called by the Claude Code session each iteration
+    after a child spec is emitted. Pass `run_dir` to land the JSONL alongside
+    spec.json + run.py (the Section 11 canonical layout).
     """
-    led = Ledger(ledger_path, experiments_root=experiments_root)
+    led = Ledger(ledger_path)
     try:
         led.init_schema()
         led.write_mutation_trace(
@@ -178,6 +180,7 @@ def record_mutation_attempt(iteration: int, run_id: str,
             fingerprint=fingerprint,
             reasoning_summary=reasoning_summary,
             accepted=accepted,
+            run_dir=run_dir,
         )
     finally:
         led.close()
