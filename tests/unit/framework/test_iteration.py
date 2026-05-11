@@ -125,3 +125,77 @@ def test_prepare_batch_prompt_is_markdown(tmp_db_path, seed_specs):
         assert "## Parent program" in prompt
         assert "## Meta-stochastic state" in prompt
     led.close()
+
+
+def test_prepare_batch_composite_scoring_uses_novelty_alpha(tmp_db_path):
+    """When meta_state.novelty_alpha is set, prepare_batch should pick parents
+    via fitness.scalar_score (composite of pareto + novelty + accuracy + ECE),
+    not raw balanced_acc. With alpha low (heavy novelty weight), the winner
+    can differ from the raw-accuracy winner."""
+    import numpy as np
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    spec = {"model": {"family": "bigru"}}
+
+    # Two members on island 0: A has higher acc but identical confusion to others
+    # (so low novelty); B has slightly lower acc but a different confusion.
+    rid_a = led.allocate_run_id()
+    led.write_experiment(rid_a, spec, parent_id=None, island_id=0)
+    led.write_result(rid_a, {
+        "balanced_acc": 0.45,
+        "confusion_3x3": [[10, 1, 1], [1, 10, 1], [1, 1, 10]],
+        "ece": 0.05, "param_count": 1000, "generalization_gap": 0.0,
+    })
+
+    rid_b = led.allocate_run_id()
+    led.write_experiment(rid_b, spec, parent_id=None, island_id=0)
+    led.write_result(rid_b, {
+        "balanced_acc": 0.40,
+        "confusion_3x3": [[5, 5, 2], [4, 6, 2], [3, 4, 5]],
+        "ece": 0.05, "param_count": 1000, "generalization_gap": 0.0,
+    })
+
+    # Add a third "reference" member that's similar to A (so A has low novelty
+    # vs the population, B has high novelty).
+    rid_c = led.allocate_run_id()
+    led.write_experiment(rid_c, spec, parent_id=None, island_id=0)
+    led.write_result(rid_c, {
+        "balanced_acc": 0.44,
+        "confusion_3x3": [[10, 1, 1], [1, 10, 1], [1, 1, 10]],
+        "ece": 0.05, "param_count": 1000, "generalization_gap": 0.0,
+    })
+
+    # With composite scoring + heavy novelty weight (alpha=0.1), B can win
+    # despite lower accuracy.
+    meta_low_alpha = {"p_lit": 0.5, "novelty_alpha": 0.1,
+                      "temperature": 0.7, "failure_boost_active": False}
+    won_b_at_least_once = False
+    for seed in range(20):
+        batch = it.prepare_batch(led, island_count=1, tournament_size=3,
+                                  rng_seed=seed, meta_state=meta_low_alpha,
+                                  composite_scoring=True)
+        if batch[0]["parent_run_id"] == rid_b:
+            won_b_at_least_once = True
+            break
+    assert won_b_at_least_once, "novelty-weighted tournament never picked B"
+    led.close()
+
+
+def test_prepare_batch_composite_off_uses_raw_accuracy(tmp_db_path):
+    """When composite_scoring=False (default), highest balanced_acc always wins."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    spec = {"model": {"family": "bigru"}}
+    rid_high = led.allocate_run_id()
+    led.write_experiment(rid_high, spec, parent_id=None, island_id=0)
+    led.write_result(rid_high, {"balanced_acc": 0.50,
+                                "confusion_3x3": [[10, 0, 0]] * 3})
+    rid_low = led.allocate_run_id()
+    led.write_experiment(rid_low, spec, parent_id=None, island_id=0)
+    led.write_result(rid_low, {"balanced_acc": 0.40,
+                               "confusion_3x3": [[10, 0, 0]] * 3})
+    # tournament_size >= island size => deterministic
+    batch = it.prepare_batch(led, island_count=1, tournament_size=2,
+                              rng_seed=0)
+    assert batch[0]["parent_run_id"] == rid_high
+    led.close()

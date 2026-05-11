@@ -26,6 +26,17 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import math
+import random
+
+import numpy as np
+
+from framework.fitness import (
+    confidence_weighted,
+    novelty_score,
+    pareto_rank,
+    scalar_score,
+)
 from framework.ledger import Ledger
 from framework.mutation import MetaState, assemble_mutation_prompt
 from framework.population import Islands
@@ -120,10 +131,79 @@ def _island_best_specs(ledger: Ledger, island_id: int, k: int = 5) -> list[dict]
     return [m["spec"] for m in members_with_fitness[:k]]
 
 
+def _composite_tournament(ledger: Ledger, island_id: int,
+                           tournament_size: int, meta: MetaState,
+                           ece_lambda: float, rng: random.Random) -> str:
+    """Tournament selection using `framework.fitness.scalar_score`.
+
+    Builds Pareto rank + novelty score per island member, then samples
+    `tournament_size` candidates and picks the highest composite. `alpha`
+    in scalar_score = meta.novelty_alpha. Falls back to raw-accuracy if any
+    member lacks confusion_3x3 (e.g., seed placeholder fitness).
+    """
+    members = [m for m in ledger.get_island_members(island_id)
+               if m.get("fitness")]
+    if not members:
+        raise ValueError(f"island {island_id} is empty")
+
+    # If any member lacks a real confusion matrix, raw-accuracy fallback
+    cms = [m["fitness"].get("confusion_3x3") for m in members]
+    if any(cm is None for cm in cms):
+        members.sort(key=lambda m: m["fitness"].get("balanced_acc", -math.inf),
+                     reverse=True)
+        size = min(tournament_size, len(members))
+        candidates = rng.sample(members, size)
+        return max(candidates,
+                   key=lambda m: m["fitness"].get("balanced_acc", -math.inf)
+                   )["run_id"]
+
+    cms_np = [np.array(cm, dtype=np.float64) for cm in cms]
+    # Pareto: minimize gap, params; maximize bal_acc (we negate it for the
+    # minimize-everywhere convention)
+    fitness_vectors = []
+    for m in members:
+        fv = m["fitness"]
+        fitness_vectors.append({
+            "neg_bal_acc": -float(fv.get("balanced_acc", 0.0)),
+            "gap": float(fv.get("generalization_gap", 0.0)),
+            "params": float(fv.get("param_count", 0)),
+            "ece": float(fv.get("ece", 0.5)),
+        })
+    ranks = pareto_rank(
+        fitness_vectors,
+        axes=["neg_bal_acc", "gap", "params", "ece"],
+        directions={"neg_bal_acc": "minimize", "gap": "minimize",
+                    "params": "minimize", "ece": "minimize"},
+    )
+
+    # Composite score per member
+    scored = []
+    for i, m in enumerate(members):
+        fv = m["fitness"]
+        # Novelty = mean kNN distance to other members' confusion matrices
+        others = [cms_np[j] for j in range(len(members)) if j != i]
+        nov = novelty_score(cms_np[i], others, k=min(5, max(1, len(others))))
+        s = scalar_score(
+            pareto_rank_value=ranks[i],
+            novelty=nov,
+            accuracy=float(fv.get("balanced_acc", 0.0)),
+            ece=float(fv.get("ece", 0.5)),
+            alpha=meta.novelty_alpha,
+            lam=ece_lambda,
+        )
+        scored.append((s, m["run_id"]))
+
+    size = min(tournament_size, len(scored))
+    candidates = rng.sample(scored, size)
+    return max(candidates, key=lambda x: x[0])[1]
+
+
 def prepare_batch(ledger: Ledger, island_count: int,
                   tournament_size: int = 3,
                   rng_seed: int | None = None,
-                  meta_state: dict | None = None) -> list[dict]:
+                  meta_state: dict | None = None,
+                  composite_scoring: bool = False,
+                  ece_lambda: float = 0.5) -> list[dict]:
     """Build one batch of mutation prompts, one per island.
 
     Returns a list of length `island_count`. Each entry is a dict with:
@@ -132,8 +212,12 @@ def prepare_batch(ledger: Ledger, island_count: int,
       parent_spec: dict
       prompt: str  (Markdown blob via assemble_mutation_prompt)
       meta: MetaState  (the meta-stochastic state at this iteration)
+
+    `composite_scoring=True` switches tournament from raw balanced_acc to
+    `fitness.scalar_score` (Pareto rank + novelty + ECE-weighted accuracy,
+    weighted by meta.novelty_alpha). Use this once Level 2 has voted to
+    raise novelty_alpha above the placeholder.
     """
-    isl = _build_islands_from_ledger(ledger, island_count, rng_seed=rng_seed)
     meta = MetaState(
         p_lit=float((meta_state or {}).get("p_lit", 0.5)),
         novelty_alpha=float((meta_state or {}).get("novelty_alpha", 0.3)),
@@ -141,18 +225,26 @@ def prepare_batch(ledger: Ledger, island_count: int,
         failure_boost_active=bool((meta_state or {}).get(
             "failure_boost_active", False)),
     )
+    rng = random.Random(rng_seed)
     batch: list[dict] = []
+    if not composite_scoring:
+        # Default raw-accuracy path via Islands.sample_parent
+        isl = _build_islands_from_ledger(ledger, island_count,
+                                          rng_seed=rng_seed)
     for island_id in range(island_count):
         try:
-            parent_rid = isl.sample_parent(island_id,
-                                            tournament_size=tournament_size)
+            if composite_scoring:
+                parent_rid = _composite_tournament(
+                    ledger, island_id, tournament_size,
+                    meta=meta, ece_lambda=ece_lambda, rng=rng,
+                )
+            else:
+                parent_rid = isl.sample_parent(island_id,
+                                                tournament_size=tournament_size)
         except ValueError:
-            # Empty island; skip
             continue
         parent_spec = _spec_for_run_id(ledger, parent_rid)
         island_bests = _island_best_specs(ledger, island_id, k=5)
-        # Recent rejected programs: pulled from constraint_events; for now,
-        # pass empty list. Future enhancement: query rejected mutation_traces.
         recent_failures: list[dict] = []
         prompt = assemble_mutation_prompt(
             parent_spec=parent_spec,
