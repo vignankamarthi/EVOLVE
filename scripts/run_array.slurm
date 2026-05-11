@@ -82,6 +82,15 @@ if [[ -z "${RUN_ID}" || ! -d "${RUN_DIR}" ]]; then
     exit 1
 fi
 
+# Re-run guard (2026-05-11): refuse to overwrite an existing result.json.
+# Prevents the iter_0001 / iter_0002 mix-up. To re-run, delete the stale
+# result.json first OR adjust the manifest to point at a fresh run_dir.
+if [[ -f "${RUN_DIR}/result.json" ]]; then
+    echo "FATAL: ${RUN_DIR}/result.json already exists." >&2
+    echo "This task was already trained. Delete the result.json or edit the manifest." >&2
+    exit 1
+fi
+
 # Verify CUDA. Warn but don't kill (CPU fallback works, just slow).
 CUDA_OK=$(python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null)
 if [[ "$CUDA_OK" != "True" ]]; then
