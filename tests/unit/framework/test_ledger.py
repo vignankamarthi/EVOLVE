@@ -368,3 +368,79 @@ def test_framework_mutation_records_iteration_optional(tmp_db_path):
     row = cur.fetchone()
     assert "iter=42" in row["description"]
     led.close()
+
+
+# --- Phase X1: meta_state + critic_population I/O ---
+
+
+def test_write_meta_state_round_trip(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    led.write_meta_state(
+        iteration=5, p_lit=0.55, novelty_alpha=0.42,
+        temperature=0.8,
+        failure_boost={"failure_boost_active": True, "boost_factor": 1.5},
+    )
+    state = led.read_latest_meta_state()
+    assert state["iteration"] == 5
+    assert abs(state["p_lit"] - 0.55) < 1e-9
+    assert abs(state["novelty_alpha"] - 0.42) < 1e-9
+    assert abs(state["temperature"] - 0.8) < 1e-9
+    assert state["failure_boost"]["failure_boost_active"] is True
+    assert state["failure_boost"]["boost_factor"] == 1.5
+    led.close()
+
+
+def test_read_latest_meta_state_empty_returns_none(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    assert led.read_latest_meta_state() is None
+    led.close()
+
+
+def test_read_latest_meta_state_returns_highest_iteration(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    led.write_meta_state(iteration=1, p_lit=0.5, novelty_alpha=0.3,
+                          temperature=0.7, failure_boost={"active": False})
+    led.write_meta_state(iteration=7, p_lit=0.6, novelty_alpha=0.5,
+                          temperature=0.9, failure_boost={"active": True})
+    led.write_meta_state(iteration=3, p_lit=0.4, novelty_alpha=0.2,
+                          temperature=0.5, failure_boost={"active": False})
+    latest = led.read_latest_meta_state()
+    assert latest["iteration"] == 7
+    assert latest["p_lit"] == 0.6
+    led.close()
+
+
+def test_write_critic_round_trip(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    genome = {
+        "subject_subset": [11, 15, 18],
+        "signal_perturbation": {"Bvp": {"type": "gaussian_noise", "sigma": 0.1}},
+        "channel_permutation": [0, 1, 3, 2],
+    }
+    led.write_critic(critic_id="c_001", parent_id=None,
+                      genome=genome, fitness=0.42)
+    pop = led.read_critic_population()
+    assert len(pop) == 1
+    assert pop[0]["critic_id"] == "c_001"
+    assert pop[0]["parent_id"] is None
+    assert pop[0]["genome"] == genome
+    assert pop[0]["fitness"] == 0.42
+    led.close()
+
+
+def test_read_critic_population_ordered_and_limited(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    for i in range(5):
+        led.write_critic(critic_id=f"c_{i:03d}", parent_id=None,
+                          genome={"subject_subset": [i]},
+                          fitness=float(i) / 10)
+    pop = led.read_critic_population()
+    assert len(pop) == 5
+    # By default, ordered by fitness descending (hardest critics first)
+    assert pop[0]["fitness"] >= pop[-1]["fitness"]
+    led.close()

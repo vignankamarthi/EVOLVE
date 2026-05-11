@@ -31,6 +31,11 @@ import random
 
 import numpy as np
 
+from framework.breakdown import (
+    CriticPopulation,
+    stagnation_escalation,
+    trigger_migration,
+)
 from framework.fitness import (
     confidence_weighted,
     novelty_score,
@@ -38,6 +43,7 @@ from framework.fitness import (
     scalar_score,
 )
 from framework.ledger import Ledger
+from framework.meta import step_meta_state
 from framework.mutation import MetaState, assemble_mutation_prompt
 from framework.population import Islands
 
@@ -198,37 +204,188 @@ def _composite_tournament(ledger: Ledger, island_id: int,
     return max(candidates, key=lambda x: x[0])[1]
 
 
+def _island_stagnation_gap(ledger: Ledger, island_id: int) -> int:
+    """Count of completed children on this island since its last fitness
+    improvement. 0 means the most-recent child IS the best."""
+    members = [m for m in ledger.get_island_members(island_id)
+               if m.get("fitness") and m["fitness"].get("balanced_acc") is not None]
+    if len(members) < 2:
+        return 0
+    members.sort(key=lambda m: m.get("completed_at") or 0.0)
+    best_so_far = -float("inf")
+    last_improvement_idx = 0
+    for i, m in enumerate(members):
+        acc = m["fitness"]["balanced_acc"]
+        if acc > best_so_far:
+            best_so_far = acc
+            last_improvement_idx = i
+    return len(members) - 1 - last_improvement_idx
+
+
+def _foreign_champion(ledger: Ledger, island_count: int,
+                      origin_island_id: int) -> tuple[int, str, dict] | None:
+    """Pick the highest-fitness member across all OTHER islands. Returns
+    (foreign_island_id, foreign_run_id, foreign_spec) or None."""
+    best_acc = -float("inf")
+    best = None
+    for j in range(island_count):
+        if j == origin_island_id:
+            continue
+        for m in ledger.get_island_members(j):
+            if not m.get("fitness"):
+                continue
+            acc = m["fitness"].get("balanced_acc", -float("inf"))
+            if acc > best_acc:
+                best_acc = acc
+                best = (j, m["run_id"], m["spec"])
+    return best
+
+
+def _prompt_with_critic(prompt: str, critic_pop: list[dict]) -> str:
+    """Append top-3 critic genomes to the mutation prompt."""
+    if not critic_pop:
+        return prompt
+    top = critic_pop[:3]
+    lines = ["", "## Hard cases from critic population (Hillis 1990)", ""]
+    for c in top:
+        g = c.get("genome", {})
+        lines.append(
+            f"- critic_id={c['critic_id']} fitness={c['fitness']:.3f} "
+            f"subjects={g.get('subject_subset')} "
+            f"channel_perm={g.get('channel_permutation')}"
+        )
+    lines.append("")
+    lines.append("Prefer mutations that increase robustness on these hard cases.")
+    return prompt + "\n" + "\n".join(lines)
+
+
 def prepare_batch(ledger: Ledger, island_count: int,
                   tournament_size: int = 3,
                   rng_seed: int | None = None,
                   meta_state: dict | None = None,
                   composite_scoring: bool = False,
-                  ece_lambda: float = 0.5) -> list[dict]:
+                  ece_lambda: float = 0.5,
+                  evolve_meta: bool = False,
+                  stagnation_patience: int | None = None,
+                  migration_patience: int | None = None,
+                  evolve_critics: bool = False,
+                  critic_pop_size: int = 30,
+                  include_critic_in_prompt: bool = False) -> list[dict]:
     """Build one batch of mutation prompts, one per island.
 
     Returns a list of length `island_count`. Each entry is a dict with:
-      island_id: int
-      parent_run_id: str  (selected via tournament)
-      parent_spec: dict
-      prompt: str  (Markdown blob via assemble_mutation_prompt)
-      meta: MetaState  (the meta-stochastic state at this iteration)
+      island_id, parent_run_id, parent_spec, prompt, meta (MetaState)
 
-    `composite_scoring=True` switches tournament from raw balanced_acc to
-    `fitness.scalar_score` (Pareto rank + novelty + ECE-weighted accuracy,
-    weighted by meta.novelty_alpha). Use this once Level 2 has voted to
-    raise novelty_alpha above the placeholder.
+    Additional keys may be present:
+      stagnant: True when island gap >= stagnation_patience
+      migrated_from_island: foreign island id when migration triggered
+      foreign_parent_run_id, foreign_parent_spec: the migration co-parent
+
+    Wired Level 1 mechanisms:
+      composite_scoring=True   -> fitness.scalar_score for tournament
+      evolve_meta=True         -> step_meta_state across batches (persists to ledger)
+      stagnation_patience=N    -> per-island stagnation_escalation when gap >= N
+      migration_patience=N     -> trigger_migration with foreign co-parent when gap >= N
+      evolve_critics=True      -> CriticPopulation.evolve_one + persist via ledger
+      include_critic_in_prompt -> top critics appended to mutation prompt
     """
-    meta = MetaState(
-        p_lit=float((meta_state or {}).get("p_lit", 0.5)),
-        novelty_alpha=float((meta_state or {}).get("novelty_alpha", 0.3)),
-        temperature=float((meta_state or {}).get("temperature", 0.7)),
-        failure_boost_active=bool((meta_state or {}).get(
-            "failure_boost_active", False)),
-    )
     rng = random.Random(rng_seed)
+
+    # ----- Meta-state: load latest from ledger if present, else use input -----
+    prior_meta = ledger.read_latest_meta_state() if evolve_meta else None
+    if prior_meta is not None:
+        base_meta = {
+            "p_lit": prior_meta["p_lit"],
+            "novelty_alpha": prior_meta["novelty_alpha"],
+            "temperature": prior_meta["temperature"],
+            "failure_boost_active": prior_meta["failure_boost"].get(
+                "failure_boost_active", False),
+        }
+    else:
+        base_meta = dict(meta_state or {})
+        base_meta.setdefault("p_lit", 0.5)
+        base_meta.setdefault("novelty_alpha", 0.3)
+        base_meta.setdefault("temperature", 0.7)
+        base_meta.setdefault("failure_boost_active", False)
+
+    # Recent fitness deltas across the pool (for failure-aware boost)
+    recent_traces = ledger.recent_mutation_traces(window=10)
+    recent_deltas: list[float] = []
+    recent_accs = []
+    for t in recent_traces:
+        # Lookup acc via experiments hydration; cheap enough here
+        for i in range(island_count):
+            for m in ledger.get_island_members(i):
+                if m["run_id"] == t["run_id"] and m.get("fitness"):
+                    recent_accs.append(m["fitness"].get("balanced_acc", 0.0))
+                    break
+    for i in range(1, len(recent_accs)):
+        recent_deltas.append(recent_accs[i] - recent_accs[i - 1])
+
+    if evolve_meta:
+        new_meta = step_meta_state(base_meta, recent_deltas=recent_deltas,
+                                    rng=rng)
+        # Persist
+        next_iter = (prior_meta["iteration"] + 1) if prior_meta else 1
+        ledger.write_meta_state(
+            iteration=next_iter,
+            p_lit=new_meta.get("p_lit", 0.5),
+            novelty_alpha=new_meta.get("novelty_alpha", 0.3),
+            temperature=new_meta.get("temperature", 0.7),
+            failure_boost={
+                "failure_boost_active": new_meta.get(
+                    "failure_boost_active", False),
+            },
+        )
+        base_meta = new_meta
+
+    global_meta = MetaState(
+        p_lit=float(base_meta.get("p_lit", 0.5)),
+        novelty_alpha=float(base_meta.get("novelty_alpha", 0.3)),
+        temperature=float(base_meta.get("temperature", 0.7)),
+        failure_boost_active=bool(base_meta.get("failure_boost_active", False)),
+    )
+
+    # ----- Critic population: maintain across batches -----
+    critic_pop_data = ledger.read_critic_population() if (
+        evolve_critics or include_critic_in_prompt) else []
+    if evolve_critics:
+        if not critic_pop_data:
+            # Seed initial population
+            critic_obj = CriticPopulation(size=critic_pop_size,
+                                           rng_seed=rng_seed)
+            for c in critic_obj._members:
+                ledger.write_critic(
+                    critic_id=c.critic_id, parent_id=None,
+                    genome={
+                        "subject_subset": c.subject_subset,
+                        "signal_perturbation": c.signal_perturbation,
+                        "channel_permutation": c.channel_permutation,
+                    },
+                    fitness=c.fitness,
+                )
+        else:
+            # Evolve one new critic from a random parent
+            parent = rng.choice(critic_pop_data)
+            new_id = f"c_{rng.randint(0, 999999):06d}_{ledger.current_iteration()}"
+            # Mutate channel permutation: small swap
+            perm = list(parent["genome"].get("channel_permutation", [0, 1, 2, 3]))
+            if len(perm) >= 2:
+                i, j = rng.sample(range(len(perm)), 2)
+                perm[i], perm[j] = perm[j], perm[i]
+            new_genome = dict(parent["genome"])
+            new_genome["channel_permutation"] = perm
+            # Fitness placeholder: 1.0 - mean recent program acc (high = hard)
+            mean_acc = (sum(recent_accs) / len(recent_accs)) if recent_accs else 0.4
+            ledger.write_critic(
+                critic_id=new_id, parent_id=parent["critic_id"],
+                genome=new_genome, fitness=1.0 - mean_acc,
+            )
+        critic_pop_data = ledger.read_critic_population()
+
+    # ----- Per-island parent selection + escalation + migration -----
     batch: list[dict] = []
     if not composite_scoring:
-        # Default raw-accuracy path via Islands.sample_parent
         isl = _build_islands_from_ledger(ledger, island_count,
                                           rng_seed=rng_seed)
     for island_id in range(island_count):
@@ -236,7 +393,7 @@ def prepare_batch(ledger: Ledger, island_count: int,
             if composite_scoring:
                 parent_rid = _composite_tournament(
                     ledger, island_id, tournament_size,
-                    meta=meta, ece_lambda=ece_lambda, rng=rng,
+                    meta=global_meta, ece_lambda=ece_lambda, rng=rng,
                 )
             else:
                 parent_rid = isl.sample_parent(island_id,
@@ -245,20 +402,67 @@ def prepare_batch(ledger: Ledger, island_count: int,
             continue
         parent_spec = _spec_for_run_id(ledger, parent_rid)
         island_bests = _island_best_specs(ledger, island_id, k=5)
+
+        # Per-island local meta starts from global, may be escalated
+        local_meta_dict = {
+            "p_lit": global_meta.p_lit,
+            "novelty_alpha": global_meta.novelty_alpha,
+            "temperature": global_meta.temperature,
+            "failure_boost_active": global_meta.failure_boost_active,
+        }
+        gap = _island_stagnation_gap(ledger, island_id)
+        stagnant = False
+        if stagnation_patience is not None and gap >= stagnation_patience:
+            local_meta_dict = stagnation_escalation(
+                island_id=island_id, patience=stagnation_patience,
+                current_meta=local_meta_dict,
+            )
+            stagnant = True
+        local_meta = MetaState(
+            p_lit=float(local_meta_dict.get("p_lit", 0.5)),
+            novelty_alpha=float(local_meta_dict.get("novelty_alpha", 0.3)),
+            temperature=float(local_meta_dict.get("temperature", 0.7)),
+            failure_boost_active=bool(local_meta_dict.get(
+                "failure_boost_active", False)),
+        )
+
+        # Migration trigger
+        foreign_info = None
+        if migration_patience is not None and gap >= migration_patience:
+            foreign = _foreign_champion(ledger, island_count, island_id)
+            if foreign is not None:
+                # trigger_migration returns a structured directive dict
+                trigger_migration(
+                    stagnant_island_id=island_id,
+                    champion_run_id=parent_rid,
+                    foreign_champion_run_id=foreign[1],
+                )
+                foreign_info = foreign
+
         recent_failures: list[dict] = []
         prompt = assemble_mutation_prompt(
             parent_spec=parent_spec,
             island_best_specs=island_bests,
             recent_failures=recent_failures,
-            meta=meta,
+            meta=local_meta,
         )
-        batch.append({
+        if include_critic_in_prompt:
+            prompt = _prompt_with_critic(prompt, critic_pop_data)
+
+        entry = {
             "island_id": island_id,
             "parent_run_id": parent_rid,
             "parent_spec": parent_spec,
             "prompt": prompt,
-            "meta": meta,
-        })
+            "meta": local_meta,
+            "stagnant": stagnant,
+            "island_gap": gap,
+        }
+        if foreign_info is not None:
+            entry["migrated_from_island"] = foreign_info[0]
+            entry["foreign_parent_run_id"] = foreign_info[1]
+            entry["foreign_parent_spec"] = foreign_info[2]
+        batch.append(entry)
     return batch
 
 

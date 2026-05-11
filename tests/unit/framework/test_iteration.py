@@ -199,3 +199,170 @@ def test_prepare_batch_composite_off_uses_raw_accuracy(tmp_db_path):
                               rng_seed=0)
     assert batch[0]["parent_run_id"] == rid_high
     led.close()
+
+
+# --- Phase X: wired breakdown + meta-stochastic mechanisms ---
+
+
+@pytest.fixture
+def minimal_specs():
+    """5 minimal specs for tests that don't care about details."""
+    return [
+        {"name": f"seed_{i}",
+         "model": {"family": "bigru"},
+         "training": {"seed": 42},
+         "preprocessing": {}, "feature_extraction": None,
+         "decode": {"strategy": "argmax"}}
+        for i in range(5)
+    ]
+
+
+def test_prepare_batch_persists_meta_state(tmp_db_path, minimal_specs):
+    """Each prepare_batch call writes a new meta_state row reflecting the
+    stepped (drifted p_lit + failure_boost-updated) state."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    it.seed_population(led, minimal_specs, island_count=5)
+    assert led.read_latest_meta_state() is None
+    it.prepare_batch(led, island_count=5, tournament_size=3,
+                      rng_seed=42, evolve_meta=True)
+    state1 = led.read_latest_meta_state()
+    assert state1 is not None
+    assert "p_lit" in state1
+    assert "novelty_alpha" in state1
+    # Second batch produces a new (possibly drifted) row at higher iteration
+    it.prepare_batch(led, island_count=5, tournament_size=3,
+                      rng_seed=43, evolve_meta=True)
+    state2 = led.read_latest_meta_state()
+    assert state2["iteration"] > state1["iteration"]
+    led.close()
+
+
+def test_prepare_batch_escalates_per_island_stagnation(tmp_db_path):
+    """When an island's last_improvement gap exceeds patience, the entry's
+    local `meta` has bumped novelty_alpha + temperature."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    spec = {"model": {"family": "bigru"}, "training": {"seed": 42},
+            "preprocessing": {}, "feature_extraction": None,
+            "decode": {"strategy": "argmax"}}
+    # Island 0 has a "stale" winner (no improvement for many iters)
+    rid = led.allocate_run_id()
+    led.write_experiment(rid, spec, parent_id=None, island_id=0)
+    led.write_result(rid, {"balanced_acc": 0.42,
+                           "confusion_3x3": [[10, 0, 0]] * 3})
+    led.write_mutation_trace(iteration=1, run_id=rid, parent_run_ids=[],
+                              prompt_context="", child_spec=spec,
+                              fingerprint="fp_seed_0",
+                              reasoning_summary="", accepted=True)
+    # 30 children later, no improvement on island 0
+    for i in range(2, 32):
+        rid_i = led.allocate_run_id()
+        led.write_experiment(rid_i, spec, parent_id=rid, island_id=0)
+        led.write_result(rid_i, {"balanced_acc": 0.40,
+                                 "confusion_3x3": [[10, 0, 0]] * 3})
+        led.write_mutation_trace(iteration=i, run_id=rid_i,
+                                  parent_run_ids=[rid],
+                                  prompt_context="", child_spec=spec,
+                                  fingerprint=f"fp_{i}", reasoning_summary="",
+                                  accepted=True)
+
+    base_meta = {"p_lit": 0.5, "novelty_alpha": 0.3, "temperature": 0.7,
+                 "failure_boost_active": False}
+    batch = it.prepare_batch(led, island_count=1, tournament_size=2,
+                              rng_seed=42, meta_state=base_meta,
+                              stagnation_patience=5, evolve_meta=False)
+    entry = batch[0]
+    # novelty_alpha should be raised; temperature too
+    assert entry["meta"].novelty_alpha > 0.3
+    assert entry["meta"].temperature > 0.7
+    assert entry.get("stagnant") is True
+    led.close()
+
+
+def test_prepare_batch_triggers_migration_on_long_stagnation(tmp_db_path):
+    """When island stagnant past migration_patience, entry carries a
+    foreign_parent_run_id from a different island."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    spec = {"model": {"family": "bigru"}, "training": {"seed": 42},
+            "preprocessing": {}, "feature_extraction": None,
+            "decode": {"strategy": "argmax"}}
+    # Island 0: stagnant
+    rid_a = led.allocate_run_id()
+    led.write_experiment(rid_a, spec, parent_id=None, island_id=0)
+    led.write_result(rid_a, {"balanced_acc": 0.40,
+                             "confusion_3x3": [[10, 0, 0]] * 3})
+    led.write_mutation_trace(iteration=1, run_id=rid_a, parent_run_ids=[],
+                              prompt_context="", child_spec=spec,
+                              fingerprint="fp_a", reasoning_summary="",
+                              accepted=True)
+    # Add many flat-fitness children to island 0
+    for i in range(2, 30):
+        rid_i = led.allocate_run_id()
+        led.write_experiment(rid_i, spec, parent_id=rid_a, island_id=0)
+        led.write_result(rid_i, {"balanced_acc": 0.40,
+                                 "confusion_3x3": [[10, 0, 0]] * 3})
+        led.write_mutation_trace(iteration=i, run_id=rid_i, parent_run_ids=[rid_a],
+                                  prompt_context="", child_spec=spec,
+                                  fingerprint=f"fp_island0_{i}",
+                                  reasoning_summary="", accepted=True)
+    # Island 1: healthy
+    rid_b = led.allocate_run_id()
+    led.write_experiment(rid_b, spec, parent_id=None, island_id=1)
+    led.write_result(rid_b, {"balanced_acc": 0.55,
+                             "confusion_3x3": [[15, 0, 0]] * 3})
+    led.write_mutation_trace(iteration=30, run_id=rid_b, parent_run_ids=[],
+                              prompt_context="", child_spec=spec,
+                              fingerprint="fp_b", reasoning_summary="",
+                              accepted=True)
+
+    batch = it.prepare_batch(led, island_count=2, tournament_size=2,
+                              rng_seed=42,
+                              migration_patience=20, evolve_meta=False)
+    island0 = next(e for e in batch if e["island_id"] == 0)
+    assert island0.get("migrated_from_island") == 1
+    assert island0.get("foreign_parent_run_id") == rid_b
+    assert island0.get("foreign_parent_spec") is not None
+    led.close()
+
+
+def test_prepare_batch_evolves_critics(tmp_db_path, minimal_specs):
+    """Each prepare_batch with evolve_critics=True writes critic_population
+    rows; first call seeds, subsequent calls add 1 critic each."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    it.seed_population(led, minimal_specs, island_count=5)
+    assert len(led.read_critic_population()) == 0
+    it.prepare_batch(led, island_count=5, tournament_size=3,
+                      rng_seed=42, evolve_critics=True,
+                      critic_pop_size=5)
+    pop1 = led.read_critic_population()
+    assert len(pop1) >= 1  # at least seeded
+    it.prepare_batch(led, island_count=5, tournament_size=3,
+                      rng_seed=43, evolve_critics=True,
+                      critic_pop_size=5)
+    pop2 = led.read_critic_population()
+    assert len(pop2) >= len(pop1)  # population grew or evolved
+    led.close()
+
+
+def test_prepare_batch_prompt_includes_critic_when_present(tmp_db_path, minimal_specs):
+    """When critic population is non-empty, mutation prompt should include
+    a 'Hard cases' or 'Critic' section so Claude knows what to target."""
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    it.seed_population(led, minimal_specs, island_count=5)
+    # Seed a critic manually
+    led.write_critic(critic_id="c_test", parent_id=None,
+                      genome={"subject_subset": [11, 15],
+                              "signal_perturbation": {},
+                              "channel_permutation": [0, 1, 2, 3]},
+                      fitness=0.5)
+    batch = it.prepare_batch(led, island_count=5, tournament_size=3,
+                              rng_seed=42, include_critic_in_prompt=True)
+    # At least one entry's prompt should mention critics
+    found = any("Hard case" in e["prompt"] or "critic" in e["prompt"].lower()
+                for e in batch)
+    assert found, "no critic context in prompts"
+    led.close()

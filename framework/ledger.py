@@ -387,6 +387,70 @@ class Ledger:
 
     # --- Section 11: fitness-delta query helper ---
 
+    # --- Section 6 Level 1 meta-stochastic state ---
+
+    def write_meta_state(self, iteration: int, p_lit: float,
+                          novelty_alpha: float, temperature: float,
+                          failure_boost: dict) -> None:
+        """Persist one meta-state snapshot. Each call writes a new row.
+        Latest snapshot is the highest `iteration` value.
+        """
+        self._conn.execute(
+            "INSERT OR REPLACE INTO meta_state "
+            "(iter, p_lit, novelty_alpha, temperature, failure_boost_json, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                int(iteration),
+                float(p_lit),
+                float(novelty_alpha),
+                float(temperature),
+                json.dumps(failure_boost),
+                time.time(),
+            ),
+        )
+
+    def read_latest_meta_state(self) -> dict | None:
+        """Return the highest-iteration meta_state row as a dict, or None."""
+        row = self._conn.execute(
+            "SELECT iter, p_lit, novelty_alpha, temperature, failure_boost_json "
+            "FROM meta_state ORDER BY iter DESC LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "iteration": row["iter"],
+            "p_lit": row["p_lit"],
+            "novelty_alpha": row["novelty_alpha"],
+            "temperature": row["temperature"],
+            "failure_boost": json.loads(row["failure_boost_json"]),
+        }
+
+    # --- Section 5 coevolutionary critic population ---
+
+    def write_critic(self, critic_id: str, parent_id: str | None,
+                      genome: dict, fitness: float) -> None:
+        """Persist one critic individual. Use REPLACE to allow updates by id."""
+        self._conn.execute(
+            "INSERT OR REPLACE INTO critic_population "
+            "(critic_id, parent_id, critic_genome_json, fitness) "
+            "VALUES (?, ?, ?, ?)",
+            (critic_id, parent_id, json.dumps(genome), float(fitness)),
+        )
+
+    def read_critic_population(self, limit: int | None = None) -> list[dict]:
+        """Return current critic population, ordered by fitness DESC (hardest
+        critics first). Each entry: {critic_id, parent_id, genome, fitness}."""
+        sql = ("SELECT critic_id, parent_id, critic_genome_json, fitness "
+               "FROM critic_population ORDER BY fitness DESC")
+        if limit is not None:
+            sql += f" LIMIT {int(limit)}"
+        rows = self._conn.execute(sql).fetchall()
+        return [
+            {"critic_id": r["critic_id"], "parent_id": r["parent_id"],
+             "genome": json.loads(r["critic_genome_json"]), "fitness": r["fitness"]}
+            for r in rows
+        ]
+
     def median_fitness_delta_per_island(self, window: int) -> float:
         """Compute median balanced_acc delta per island over the last
         `window` completed experiments per island, then return the median
