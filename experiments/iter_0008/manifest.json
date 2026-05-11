@@ -1,0 +1,151 @@
+{
+  "experiments": [
+    {
+      "run_id": "r_00000034",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_00",
+      "island": 0,
+      "family": "1d_cnn",
+      "strategies": [
+        "swap_optimizer",
+        "change_normalize"
+      ],
+      "parent": "r_00000026",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000035",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_01",
+      "island": 1,
+      "family": "bigru",
+      "strategies": [
+        "change_padding",
+        "change_normalize"
+      ],
+      "parent": "r_00000012",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000036",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_02",
+      "island": 2,
+      "family": "transformer",
+      "strategies": [
+        "change_padding",
+        "swap_optimizer"
+      ],
+      "parent": "r_00000031",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000037",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_03",
+      "island": 3,
+      "family": "multi_stream_bigru",
+      "strategies": [
+        "swap_optimizer",
+        "change_normalize"
+      ],
+      "parent": "r_00000004",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000038",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_04",
+      "island": 4,
+      "family": "ridge_classifier_cv",
+      "strategies": [
+        "toggle_class_weight"
+      ],
+      "parent": "r_00000005",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000039",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_05",
+      "island": 0,
+      "family": "1d_cnn",
+      "strategies": [
+        "swap_optimizer",
+        "scale_lr"
+      ],
+      "parent": "r_00000006",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000040",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_06",
+      "island": 1,
+      "family": "bigru",
+      "strategies": [
+        "change_padding",
+        "swap_optimizer"
+      ],
+      "parent": "r_00000012",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000041",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_07",
+      "island": 2,
+      "family": "transformer",
+      "strategies": [
+        "swap_optimizer"
+      ],
+      "parent": "r_00000031",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000042",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_08",
+      "island": 3,
+      "family": "multi_stream_bigru",
+      "strategies": [
+        "change_normalize",
+        "swap_optimizer"
+      ],
+      "parent": "r_00000004",
+      "stagnant": false,
+      "migrated_from_island": null
+    },
+    {
+      "run_id": "r_00000043",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0008/child_09",
+      "island": 4,
+      "family": "ridge_classifier_cv",
+      "strategies": [
+        "change_alpha_grid"
+      ],
+      "parent": "r_00000025",
+      "stagnant": false,
+      "migrated_from_island": null
+    }
+  ]
+}

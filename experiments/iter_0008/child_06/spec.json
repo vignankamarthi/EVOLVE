@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.2,
+    "family": "bigru",
+    "hidden_size": 64,
+    "num_layers": 1
+  },
+  "name": "iter_0008_child06_island1_bigru",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0008 child 6 (island 1, bigru). Strategies: ['change_padding', 'swap_optimizer']. Mutations: standard.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 30,
+    "loss": "ce_class_balanced",
+    "lr": 0.0005,
+    "optimizer": "adamw",
+    "seed": 806
+  }
+}

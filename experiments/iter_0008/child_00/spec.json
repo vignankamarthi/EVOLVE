@@ -1,0 +1,31 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "base_channels": 32,
+    "depth": 4,
+    "family": "1d_cnn",
+    "kernel_size": 7,
+    "use_residual": true
+  },
+  "name": "iter_0008_child00_island0_1d_cnn",
+  "preprocessing": {
+    "normalize": "per_trial_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0008 child 0 (island 0, 1d_cnn). Strategies: ['swap_optimizer', 'change_normalize']. Mutations: standard.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.003,
+    "optimizer": "adamw",
+    "seed": 800
+  }
+}

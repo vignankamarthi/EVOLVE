@@ -1,0 +1,32 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "d_model": 64,
+    "dropout": 0.1,
+    "family": "transformer",
+    "ff_dim": 128,
+    "num_heads": 4,
+    "num_layers": 4
+  },
+  "name": "iter_0008_child07_island2_transfor",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0008 child 7 (island 2, transformer). Strategies: ['swap_optimizer']. Mutations: standard.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.0005,
+    "optimizer": "adam",
+    "seed": 807
+  }
+}

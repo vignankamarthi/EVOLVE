@@ -1,0 +1,38 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "minirocket",
+    "num_features": 9996,
+    "per_channel": true,
+    "random_state": 42
+  },
+  "model": {
+    "alphas": [
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "class_weight": null,
+    "family": "ridge_classifier_cv"
+  },
+  "name": "iter_0008_child04_island4_ridge_cl",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0008 child 4 (island 4, ridge_classifier_cv). Strategies: ['toggle_class_weight']. Mutations: standard.",
+  "training": {
+    "loss": "ridge_regression_cv",
+    "seed": 804
+  }
+}
