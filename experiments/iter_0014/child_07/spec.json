@@ -1,0 +1,29 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "family": "multi_stream_bigru",
+    "fusion": "late_concat",
+    "fusion_dropout": 0.2,
+    "per_channel_hidden": 40,
+    "per_channel_layers": 2
+  },
+  "name": "iter_0014_c07_mut_from_r89",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0014 island 3. Mutation of r_00000089 (multi_stream_bigru, hidden=40, focal=1.0, 110 epochs, 0.5486 full 41). Champion best epoch 104/109 = still under-trained. Strategy: [reseed]. Variance check on 0.5486 to know how much of iter_0013's +0.044 jump is signal vs seed noise.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 110,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 14008
+  }
+}
