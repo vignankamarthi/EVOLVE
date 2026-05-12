@@ -1,15 +1,22 @@
 """Multi-seed initialization.
 
-Returns the 5 seed program specs ratified at HIP-C (2026-05-11):
+Returns the 8 seed program specs:
 
+HIP-C originals (ratified 2026-05-11):
   1. 1D-CNN ResNet-style
   2. BiGRU baseline (existing ai4pain.baselines)
   3. Lightweight Transformer encoder
   4. Multi-stream BiGRU (per-channel encoder + late fusion)
   5. MINIROCKET + RidgeClassifierCV (Dempster, Schmidt, Webb 2020,
-     arxiv:2012.08791). Fixed random convolutional kernels (~9996 features)
-     transform the multivariate time series; a ridge-regression classifier
-     with cross-validated alpha picks the decision boundary.
+     arxiv:2012.08791).
+
+iter_0012 expansion (literature sprawl, 2026-05-11 late):
+  6. EDA decomposition MLP (cvxEDA tonic+phasic + HRV stats + aux stats -> MLP).
+     Greco et al. 2016 cvxEDA + Xia et al. 2024 HRV-feature approach.
+  7. Spectrogram 2D-CNN (STFT per channel -> stack -> small 2D CNN).
+     Sriram Kumar et al. 2024 (CWT + VGG16, 86% multimodal).
+  8. HRV features MLP (BVP peaks -> RMSSD/SDNN/LF/HF + aux stats -> MLP).
+     Xia et al. 2024 stress detection on HRV features.
 
 HIP-C decision (Vignan, 2026-05-11): dropped the original Catch22+XGB and
 Catch22+LightGBM seeds. Rationale: hand-crafted-feature + tree-boosting
@@ -97,6 +104,48 @@ def default_seed_specs() -> list[dict]:
                       "alphas": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
                       "class_weight": "balanced"},
             "training": {"loss": "ridge_regression_cv",
+                         "seed": 42},
+            "decode": {"strategy": "argmax"},
+        },
+        {
+            # cvxEDA tonic+phasic decomposition + HRV-from-BVP + aux stats.
+            # Greco et al. 2016 (cvxEDA) + Xia et al. 2024 (HRV features).
+            "name": "seed_eda_decomp_mlp",
+            "preprocessing": {"normalize": "per_feature_zscore"},
+            "feature_extraction": {"family": "cvx_eda_decomp", "fs": 100,
+                                    "tau0": 2.0, "tau1": 0.7},
+            "model": {"family": "eda_decomp_mlp", "hidden": 64,
+                      "dropout": 0.2},
+            "training": {"loss": "ce_class_balanced", "optimizer": "adam",
+                         "lr": 1e-3, "epochs": 50, "batch_size": 32,
+                         "seed": 42},
+            "decode": {"strategy": "argmax"},
+        },
+        {
+            # STFT per channel -> stack to (C, F, T') -> small 2D CNN.
+            # Sriram Kumar et al. 2024 multimodal pain/affect (CWT + VGG16).
+            "name": "seed_spectrogram_cnn2d",
+            "preprocessing": {"normalize": "per_channel_zscore"},
+            "feature_extraction": {"family": "spectrogram", "fs": 100,
+                                    "nperseg": 64, "noverlap": 32,
+                                    "log_scale": True},
+            "model": {"family": "spectrogram_cnn2d", "base_channels": 16,
+                      "depth": 2, "dropout": 0.2},
+            "training": {"loss": "ce_class_balanced", "optimizer": "adam",
+                         "lr": 1e-3, "epochs": 30, "batch_size": 32,
+                         "seed": 42},
+            "decode": {"strategy": "argmax"},
+        },
+        {
+            # BVP peak detection -> HRV time+freq features -> MLP.
+            # Xia et al. 2024 hit 98%+ on stress with HRV features.
+            "name": "seed_hrv_features_mlp",
+            "preprocessing": {"normalize": "per_feature_zscore"},
+            "feature_extraction": {"family": "hrv_features", "fs": 100},
+            "model": {"family": "hrv_features_mlp", "hidden": 64,
+                      "dropout": 0.2},
+            "training": {"loss": "ce_class_balanced", "optimizer": "adam",
+                         "lr": 1e-3, "epochs": 50, "batch_size": 32,
                          "seed": 42},
             "decode": {"strategy": "argmax"},
         },

@@ -31,6 +31,11 @@ FAMILY_ENTRY_POINTS: dict[str, tuple[str, str]] = {
     "1d_cnn": ("ai4pain.cnn_1d", "run_from_dir"),
     "transformer": ("ai4pain.transformer", "run_from_dir"),
     "multi_stream_bigru": ("ai4pain.multi_stream", "run_from_dir"),
+    # iter_0012 expansion (literature sprawl): EDA decomposition,
+    # spectrogram 2D CNN, HRV feature engineering.
+    "eda_decomp_mlp": ("ai4pain.eda_decomp", "run_from_dir"),
+    "spectrogram_cnn2d": ("ai4pain.spectrogram", "run_from_dir"),
+    "hrv_features_mlp": ("ai4pain.hrv", "run_from_dir"),
 }
 
 

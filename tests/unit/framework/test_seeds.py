@@ -8,19 +8,21 @@ def test_module_imports():
     assert callable(seeds.diversify_population)
 
 
-def test_default_seed_specs_returns_five_seeds():
-    """HIP-C ratified 5 seeds (2026-05-11): 4 neural + MINIROCKET. Catch22+gbm
-    pair dropped per Vignan's classical-ML-out-of-search decision.
+def test_default_seed_specs_returns_eight_seeds():
+    """iter_0012 expanded the seed pool from 5 to 8 via literature sprawl:
+    cvxEDA decomp, spectrogram 2D CNN, HRV features. HIP-C cut (Catch22+gbm)
+    remains permanent.
     """
     specs = seeds.default_seed_specs()
-    assert len(specs) == 5
+    assert len(specs) == 8
 
 
-def test_default_seed_families_match_hip_c():
+def test_default_seed_families_match_post_iter_0012():
     specs = seeds.default_seed_specs()
     families = {s["model"]["family"] for s in specs}
     expected = {"1d_cnn", "bigru", "transformer",
-                "multi_stream_bigru", "ridge_classifier_cv"}
+                "multi_stream_bigru", "ridge_classifier_cv",
+                "eda_decomp_mlp", "spectrogram_cnn2d", "hrv_features_mlp"}
     assert families == expected
 
 
@@ -77,17 +79,17 @@ def test_diversify_population_rejects_invalid_island_count():
 
 
 def test_diversify_population_handles_more_islands_than_seeds():
-    specs = seeds.default_seed_specs()  # 5 seeds
-    distributed = seeds.diversify_population(specs, island_count=10)
-    assert len(distributed) == 10
+    specs = seeds.default_seed_specs()  # 8 seeds
+    distributed = seeds.diversify_population(specs, island_count=12)
+    assert len(distributed) == 12
 
 
 def test_diversify_population_handles_fewer_islands_than_seeds():
-    specs = seeds.default_seed_specs()  # 5 seeds
+    specs = seeds.default_seed_specs()  # 8 seeds
     distributed = seeds.diversify_population(specs, island_count=3)
     assert len(distributed) == 3
     total = sum(len(i) for i in distributed)
-    assert total == 5
+    assert total == 8
 
 
 def test_diversify_population_empty_seeds():
