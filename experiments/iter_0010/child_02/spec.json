@@ -1,0 +1,32 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "d_model": 64,
+    "dropout": 0.1,
+    "family": "transformer",
+    "ff_dim": 128,
+    "num_heads": 4,
+    "num_layers": 4
+  },
+  "name": "iter_0010_child02_island2_transfor",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0010 island 2 (transformer, pass A). Strategies: ['swap_optimizer'].  Composite tournament w/ novelty_alpha=0.675 (post Level 2 2nd fire).",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.0005,
+    "optimizer": "adam",
+    "seed": 1002
+  }
+}

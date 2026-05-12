@@ -1,0 +1,31 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "base_channels": 32,
+    "depth": 4,
+    "family": "1d_cnn",
+    "kernel_size": 7,
+    "use_residual": false
+  },
+  "name": "iter_0010_child00_island0_1d_cnn",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0010 island 0 (1d_cnn, pass A). Strategies: ['scale_epochs', 'toggle_residual'].  Composite tournament w/ novelty_alpha=0.675 (post Level 2 2nd fire).",
+  "training": {
+    "batch_size": 32,
+    "epochs": 20,
+    "loss": "ce_class_balanced",
+    "lr": 0.003,
+    "optimizer": "adamw",
+    "seed": 1000
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "minirocket",
+    "max_dilations_per_kernel": 64,
+    "num_features": 9996,
+    "per_channel": true,
+    "random_state": 42
+  },
+  "model": {
+    "alphas": [
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "class_weight": null,
+    "family": "ridge_classifier_cv"
+  },
+  "name": "iter_0010_child03_island4_ridge_cl",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0010 island 4 (ridge_classifier_cv, pass A). Strategies: ['toggle_class_weight', 'change_normalize'].  Composite tournament w/ novelty_alpha=0.675 (post Level 2 2nd fire).",
+  "training": {
+    "loss": "ridge_regression_cv",
+    "seed": 1004
+  }
+}

@@ -86,6 +86,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude session state
+.claude/
+
 # Cluster / SLURM
 slurm-*.out
 *.err

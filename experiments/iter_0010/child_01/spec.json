@@ -1,0 +1,30 @@
+{
+  "data": {
+    "subset_seed": 0,
+    "subset_size": 10
+  },
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "dropout": 0.2,
+    "family": "bigru",
+    "hidden_size": 64,
+    "num_layers": 1
+  },
+  "name": "iter_0010_child01_island1_bigru",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0010 island 1 (bigru, pass A). Strategies: ['swap_optimizer', 'scale_lr'].  Composite tournament w/ novelty_alpha=0.675 (post Level 2 2nd fire).",
+  "training": {
+    "batch_size": 32,
+    "epochs": 30,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adamw",
+    "seed": 1001
+  }
+}

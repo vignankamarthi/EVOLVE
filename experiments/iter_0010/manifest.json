@@ -1,0 +1,100 @@
+{
+  "experiments": [
+    {
+      "run_id": "r_00000060",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_00",
+      "island": 0,
+      "family": "1d_cnn",
+      "strategies": [
+        "scale_epochs",
+        "toggle_residual"
+      ],
+      "parent": "r_00000057",
+      "pass": "A"
+    },
+    {
+      "run_id": "r_00000061",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_01",
+      "island": 1,
+      "family": "bigru",
+      "strategies": [
+        "swap_optimizer",
+        "scale_lr"
+      ],
+      "parent": "r_00000012",
+      "pass": "A"
+    },
+    {
+      "run_id": "r_00000062",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_02",
+      "island": 2,
+      "family": "transformer",
+      "strategies": [
+        "swap_optimizer"
+      ],
+      "parent": "r_00000031",
+      "pass": "A"
+    },
+    {
+      "run_id": "r_00000063",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_03",
+      "island": 4,
+      "family": "ridge_classifier_cv",
+      "strategies": [
+        "toggle_class_weight",
+        "change_normalize"
+      ],
+      "parent": "r_00000028",
+      "pass": "A"
+    },
+    {
+      "run_id": "r_00000064",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_04",
+      "island": 0,
+      "family": "1d_cnn",
+      "strategies": [
+        "swap_optimizer",
+        "scale_lr"
+      ],
+      "parent": "r_00000034",
+      "pass": "B"
+    },
+    {
+      "run_id": "r_00000065",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_05",
+      "island": 1,
+      "family": "bigru",
+      "strategies": [
+        "swap_optimizer"
+      ],
+      "parent": "r_00000040",
+      "pass": "B"
+    },
+    {
+      "run_id": "r_00000066",
+      "K": 10,
+      "seed_idx": 0,
+      "run_dir": "experiments/iter_0010/child_06",
+      "island": 3,
+      "family": "multi_stream_bigru",
+      "strategies": [
+        "swap_optimizer",
+        "scale_epochs"
+      ],
+      "parent": "r_00000059",
+      "pass": "B"
+    }
+  ]
+}
