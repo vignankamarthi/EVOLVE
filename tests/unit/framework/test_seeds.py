@@ -8,21 +8,22 @@ def test_module_imports():
     assert callable(seeds.diversify_population)
 
 
-def test_default_seed_specs_returns_eight_seeds():
-    """iter_0012 expanded the seed pool from 5 to 8 via literature sprawl:
-    cvxEDA decomp, spectrogram 2D CNN, HRV features. HIP-C cut (Catch22+gbm)
-    remains permanent.
+def test_default_seed_specs_returns_nine_seeds():
+    """iter_0012 expanded 5->8 (cvxEDA, spectrogram, HRV). The iter_0015
+    framework rebuild added multi_stream_aux (add_aux_stream operator) -> 9.
+    HIP-C cut (Catch22+gbm) remains permanent.
     """
     specs = seeds.default_seed_specs()
-    assert len(specs) == 8
+    assert len(specs) == 9
 
 
-def test_default_seed_families_match_post_iter_0012():
+def test_default_seed_families_match_post_iter_0015():
     specs = seeds.default_seed_specs()
     families = {s["model"]["family"] for s in specs}
     expected = {"1d_cnn", "bigru", "transformer",
                 "multi_stream_bigru", "ridge_classifier_cv",
-                "eda_decomp_mlp", "spectrogram_cnn2d", "hrv_features_mlp"}
+                "eda_decomp_mlp", "spectrogram_cnn2d", "hrv_features_mlp",
+                "multi_stream_aux"}
     assert families == expected
 
 
@@ -85,11 +86,11 @@ def test_diversify_population_handles_more_islands_than_seeds():
 
 
 def test_diversify_population_handles_fewer_islands_than_seeds():
-    specs = seeds.default_seed_specs()  # 8 seeds
+    specs = seeds.default_seed_specs()  # 9 seeds
     distributed = seeds.diversify_population(specs, island_count=3)
     assert len(distributed) == 3
     total = sum(len(i) for i in distributed)
-    assert total == 8
+    assert total == 9
 
 
 def test_diversify_population_empty_seeds():

@@ -149,6 +149,22 @@ def default_seed_specs() -> list[dict]:
                          "seed": 42},
             "decode": {"strategy": "argmax"},
         },
+        {
+            # multi_stream body + HRV side-input (add_aux_stream operator).
+            # iter_0015 framework rebuild.
+            "name": "seed_multi_stream_aux",
+            "preprocessing": {"normalize": "per_channel_zscore",
+                              "padding": "right_zero_to_global_max"},
+            "feature_extraction": {"family": "hrv_aux", "fs": 100},
+            "model": {"family": "multi_stream_aux",
+                      "per_channel_hidden": 32, "per_channel_layers": 1,
+                      "encoder_type": "gru", "fusion": "late_concat",
+                      "fusion_dropout": 0.2, "hrv_hidden": 32},
+            "training": {"loss": "ce_class_balanced", "optimizer": "adam",
+                         "lr": 1e-3, "epochs": 50, "batch_size": 32,
+                         "seed": 42},
+            "decode": {"strategy": "argmax"},
+        },
     ]
 
 

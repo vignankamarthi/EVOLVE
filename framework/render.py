@@ -36,6 +36,8 @@ FAMILY_ENTRY_POINTS: dict[str, tuple[str, str]] = {
     "eda_decomp_mlp": ("ai4pain.eda_decomp", "run_from_dir"),
     "spectrogram_cnn2d": ("ai4pain.spectrogram", "run_from_dir"),
     "hrv_features_mlp": ("ai4pain.hrv", "run_from_dir"),
+    # iter_0015 framework rebuild: add_aux_stream architectural operator.
+    "multi_stream_aux": ("ai4pain.multi_stream_aux", "run_from_dir"),
 }
 
 

@@ -8,7 +8,9 @@ spec. ANTIPATTERNS rule 11.
 Spec: FRAMEWORK.md Section 2 (mutation operator), Section 6 (mix-ratio).
 """
 from dataclasses import dataclass
+import copy
 import json
+import random
 
 
 @dataclass
@@ -106,3 +108,90 @@ def assemble_mutation_prompt(parent_spec: dict, island_best_specs: list[dict],
         "## Mutation directive\n\n"
         f"{_mutation_directive(meta)}\n"
     )
+
+
+# --------------------------------------------------------------------------
+# graft_family: cross-family crossover primitive (iter_0015 framework rebuild)
+# --------------------------------------------------------------------------
+
+# Each model family declares the feature_extraction family it REQUIRES.
+# None means the model ingests raw sequences (feature_extraction absent/None).
+MODEL_REQUIRED_FE: dict[str, str | None] = {
+    "bigru": None,
+    "1d_cnn": None,
+    "transformer": None,
+    "multi_stream_bigru": None,
+    "multi_stream_aux": "hrv_aux",
+    "spectrogram_cnn2d": "spectrogram",
+    "ridge_classifier_cv": "minirocket",
+    "eda_decomp_mlp": "cvx_eda_decomp",
+    "hrv_features_mlp": "hrv_features",
+}
+
+# The 5 genes a spec is composed of.
+_GRAFT_GENES = ("preprocessing", "feature_extraction", "model", "training",
+                "decode")
+
+
+def predict_graft_coherence(spec: dict) -> bool:
+    """Heuristic type-contract check for a (possibly grafted) spec.
+
+    Returns False when the spec's gene combination violates an implicit
+    input/output contract -- e.g. a spectrogram feature_extraction feeding a
+    sequence model, or a closed-form ridge training recipe on a neural model.
+    This only TAGS coherence (graft_family writes spec["graft_coherence"]);
+    it never blocks. Incoherent grafts still ship to the cluster per the
+    user's Option C choice; the ledger tolerates a missing result.json.
+    """
+    model_family = spec.get("model", {}).get("family")
+    if model_family not in MODEL_REQUIRED_FE:
+        return False  # unknown family cannot render
+
+    # 1. feature_extraction must match what the model expects.
+    required_fe = MODEL_REQUIRED_FE[model_family]
+    fe = spec.get("feature_extraction")
+    actual_fe = fe.get("family") if isinstance(fe, dict) else None
+    if actual_fe != required_fe:
+        return False
+
+    # 2. training-loss compatibility: ridge is closed-form, neural is SGD.
+    loss = spec.get("training", {}).get("loss")
+    is_ridge_model = model_family == "ridge_classifier_cv"
+    is_ridge_loss = loss == "ridge_regression_cv"
+    if is_ridge_model != is_ridge_loss:
+        return False
+
+    return True
+
+
+def graft_family(parent_a: dict, parent_b: dict,
+                 rng: random.Random) -> dict:
+    """Fully-random per-gene crossover of two parent specs.
+
+    For each of the 5 genes {preprocessing, feature_extraction, model,
+    training, decode}, the child takes parent A's gene or parent B's gene
+    with probability 0.5 each (Option C: maximum stochasticity).
+
+    The child is tagged with `graft_coherence` (from predict_graft_coherence)
+    and a `reasoning_summary` recording each gene's origin. Incoherent grafts
+    are NOT blocked -- they are tagged and still rendered.
+    """
+    child: dict = {}
+    origins: dict[str, str] = {}
+    for gene in _GRAFT_GENES:
+        pick_a = rng.random() < 0.5
+        src = parent_a if pick_a else parent_b
+        origins[gene] = "A" if pick_a else "B"
+        child[gene] = copy.deepcopy(src.get(gene))
+
+    coherent = predict_graft_coherence(child)
+    child["graft_coherence"] = coherent
+    a_name = parent_a.get("name", "A")
+    b_name = parent_b.get("name", "B")
+    origin_str = ", ".join(f"{g}<-{o}" for g, o in origins.items())
+    child["reasoning_summary"] = (
+        f"graft_family crossover of A={a_name!r} x B={b_name!r}. "
+        f"Gene origins: {origin_str}. "
+        f"predicted_coherence={coherent}."
+    )
+    return child
