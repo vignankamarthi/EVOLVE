@@ -79,23 +79,55 @@ def pad_spectrograms_to_max(specs: list[np.ndarray]) -> np.ndarray:
     return out
 
 
+class _SpecResBlock(nn.Module):
+    """2D residual block: conv-bn-relu-conv-bn + projected skip, then relu.
+    A 1x1 projection handles the channel change so the skip stays valid."""
+
+    def __init__(self, c_in: int, c_out: int):
+        super().__init__()
+        self.conv1 = nn.Conv2d(c_in, c_out, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(c_out)
+        self.conv2 = nn.Conv2d(c_out, c_out, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(c_out)
+        self.proj = (nn.Conv2d(c_in, c_out, kernel_size=1)
+                     if c_in != c_out else nn.Identity())
+        self.act = nn.ReLU(inplace=True)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        identity = self.proj(x)
+        out = self.act(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        return self.act(out + identity)
+
+
 class SpectrogramCNN2D(nn.Module):
-    """Small 2D CNN over (C, F, T) spectrogram stacks."""
+    """Small 2D CNN over (C, F, T) spectrogram stacks.
+
+    `use_residual=True` swaps each plain conv block for a `_SpecResBlock`
+    (ResNet-style skip). Residual connections counter the depth-degradation
+    seen in iter_0017 (depth=5 regressed vs depth=3).
+    """
 
     def __init__(self, in_channels: int = 4, F: int = 33,
                  base_channels: int = 16, depth: int = 2,
-                 dropout: float = 0.2, num_classes: int = 3):
+                 dropout: float = 0.2, use_residual: bool = False,
+                 num_classes: int = 3):
         super().__init__()
+        self.use_residual = use_residual
         layers = []
         c_in = in_channels
         c_out = base_channels
         for d in range(depth):
-            layers += [
-                nn.Conv2d(c_in, c_out, kernel_size=3, padding=1),
-                nn.BatchNorm2d(c_out),
-                nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
-            ]
+            if use_residual:
+                layers.append(_SpecResBlock(c_in, c_out))
+            else:
+                layers += [
+                    nn.Conv2d(c_in, c_out, kernel_size=3, padding=1),
+                    nn.BatchNorm2d(c_out),
+                    nn.ReLU(inplace=True),
+                ]
+            layers.append(nn.MaxPool2d(kernel_size=2, stride=2,
+                                        ceil_mode=True))
             c_in = c_out
             c_out = min(c_out * 2, 128)
         self.features = nn.Sequential(*layers)
@@ -190,6 +222,7 @@ def train_spectrogram(spec: dict, data_root: Path, out_dir: Path) -> dict:
         base_channels=int(model_cfg.get("base_channels", 16)),
         depth=int(model_cfg.get("depth", 2)),
         dropout=float(model_cfg.get("dropout", 0.2)),
+        use_residual=bool(model_cfg.get("use_residual", False)),
         num_classes=3,
     ).to(device)
 

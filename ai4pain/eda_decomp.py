@@ -46,7 +46,8 @@ def cvx_eda_decompose(y: np.ndarray, fs: int = 100,
                        tau0: float = 2.0, tau1: float = 0.7,
                        delta_knot: float = 10.0,
                        alpha: float = 8e-4, gamma: float = 1e-2,
-                       solver: str = "SCS") -> tuple[np.ndarray, np.ndarray]:
+                       solver: str = "SCS",
+                       decim: int = 1) -> tuple[np.ndarray, np.ndarray]:
     """cvxEDA tonic+phasic decomposition.
 
     Args:
@@ -66,6 +67,22 @@ def cvx_eda_decompose(y: np.ndarray, fs: int = 100,
     n = y.size
     if n < fs:
         return y.astype(np.float32), np.zeros_like(y, dtype=np.float32)
+
+    # Decimation speedup (iter_0018 fix for the iter_0012 cvxEDA timeout).
+    # EDA dynamics are slow (< 1 Hz), so solving the QP at a reduced rate then
+    # interpolating tonic/phasic back is near-lossless at a fraction of the
+    # cost -- the SCS cone shrinks ~`decim`x per axis. decim=4 -> 100->25 Hz.
+    if decim > 1 and (n // decim) >= max(2, fs // decim):
+        y_ds = y[::decim]
+        tonic_ds, phasic_ds = cvx_eda_decompose(
+            y_ds, fs=max(1, fs // decim), tau0=tau0, tau1=tau1,
+            delta_knot=delta_knot, alpha=alpha, gamma=gamma, solver=solver,
+            decim=1)
+        xp = np.arange(len(y_ds)) * decim
+        xq = np.arange(n)
+        tonic = np.interp(xq, xp, tonic_ds).astype(np.float32)
+        phasic = np.interp(xq, xp, phasic_ds).astype(np.float32)
+        return tonic, phasic
 
     delta = 1.0 / fs
     # Discrete-time biexponential IRF (Greco 2016 eq. 6)
@@ -131,9 +148,11 @@ def cvx_eda_decompose(y: np.ndarray, fs: int = 100,
     return tonic_arr, phasic_arr
 
 
-def _cvx_eda_stats(eda: np.ndarray, fs: int, tau0: float, tau1: float) -> np.ndarray:
+def _cvx_eda_stats(eda: np.ndarray, fs: int, tau0: float, tau1: float,
+                   decim: int = 4) -> np.ndarray:
     """7 stats from the tonic+phasic decomposition."""
-    tonic, phasic = cvx_eda_decompose(eda, fs=fs, tau0=tau0, tau1=tau1)
+    tonic, phasic = cvx_eda_decompose(eda, fs=fs, tau0=tau0, tau1=tau1,
+                                       decim=decim)
     if tonic.size < 2:
         return np.zeros(7, dtype=np.float32)
     tonic_mean = float(tonic.mean())
@@ -163,16 +182,19 @@ def _channel_stats_3(channel: np.ndarray) -> np.ndarray:
 
 def compute_per_trial_features(trial: np.ndarray, fs: int = 100,
                                   tau0: float = 2.0,
-                                  tau1: float = 0.7) -> np.ndarray:
+                                  tau1: float = 0.7,
+                                  decim: int = 4) -> np.ndarray:
     """Fixed-dim feature vector per trial.
 
     trial: (T, C>=4) array with channels [BVP, EDA, RESP, SpO2].
+    `decim` decimates the EDA signal before the cvxEDA QP solve (speedup).
     Returns: float32 ndarray of shape (EDA_FEATURE_DIM,).
     """
     trial = np.asarray(trial, dtype=np.float32)
     if trial.ndim != 2 or trial.shape[1] < 4:
         raise ValueError(f"expected (T, >=4) trial, got shape {trial.shape}")
-    eda_stats = _cvx_eda_stats(trial[:, 1], fs=fs, tau0=tau0, tau1=tau1)
+    eda_stats = _cvx_eda_stats(trial[:, 1], fs=fs, tau0=tau0, tau1=tau1,
+                                decim=decim)
     bvp_hrv = compute_hrv_features(trial[:, 0], fs=fs)
     hrv_vec = np.array([bvp_hrv["rmssd"], bvp_hrv["sdnn"],
                           bvp_hrv["pnn50"], bvp_hrv["mean_hr"]],
@@ -219,10 +241,11 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
 
 
 def _featurize_split(X: list[np.ndarray], fs: int, tau0: float,
-                       tau1: float, tag: str) -> np.ndarray:
+                       tau1: float, tag: str, decim: int = 4) -> np.ndarray:
     feats = []
     for i, x in enumerate(X):
-        f = compute_per_trial_features(x, fs=fs, tau0=tau0, tau1=tau1)
+        f = compute_per_trial_features(x, fs=fs, tau0=tau0, tau1=tau1,
+                                        decim=decim)
         feats.append(f)
         if (i + 1) % 50 == 0:
             print(f"[eda_decomp_mlp] {tag} cvxEDA progress: "
@@ -245,6 +268,7 @@ def train_eda_decomp(spec: dict, data_root: Path, out_dir: Path) -> dict:
     fs = int(fe.get("fs", 100))
     tau0 = float(fe.get("tau0", 2.0))
     tau1 = float(fe.get("tau1", 0.7))
+    decim = int(fe.get("decim", 4))  # cvxEDA decimation speedup
 
     print(f"[eda_decomp_mlp] loading train from {data_root}", flush=True)
     X_train, y_train, _ = load_split(data_root, "train", signals=signals)
@@ -254,8 +278,10 @@ def train_eda_decomp(spec: dict, data_root: Path, out_dir: Path) -> dict:
 
     print(f"[eda_decomp_mlp] cvxEDA featurize (fs={fs}, tau0={tau0}, "
           f"tau1={tau1})...", flush=True)
-    Ftr = _featurize_split(X_train, fs=fs, tau0=tau0, tau1=tau1, tag="train")
-    Fv = _featurize_split(X_val, fs=fs, tau0=tau0, tau1=tau1, tag="val")
+    Ftr = _featurize_split(X_train, fs=fs, tau0=tau0, tau1=tau1, tag="train",
+                            decim=decim)
+    Fv = _featurize_split(X_val, fs=fs, tau0=tau0, tau1=tau1, tag="val",
+                           decim=decim)
 
     mu = Ftr.mean(axis=0, keepdims=True)
     sigma = Ftr.std(axis=0, keepdims=True)

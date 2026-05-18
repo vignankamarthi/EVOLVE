@@ -105,3 +105,34 @@ def test_smoke_train_spectrogram_writes_result(tmp_path: Path):
     assert (tmp_path / "result.json").exists()
     persisted = json.loads((tmp_path / "result.json").read_text())
     assert 0.0 <= persisted["best_val_metrics"]["balanced_acc"] <= 1.0
+
+
+def test_spectrogram_cnn2d_residual_forward_shape():
+    """use_residual=True swaps plain conv blocks for ResNet-style _SpecResBlock.
+    Forward shape must be unchanged."""
+    model = spec_mod.SpectrogramCNN2D(in_channels=4, F=33, base_channels=16,
+                                       depth=3, use_residual=True,
+                                       num_classes=3)
+    out = model(torch.randn(8, 4, 33, 20))
+    assert out.shape == (8, 3)
+    assert model.use_residual is True
+
+
+def test_spectrogram_cnn2d_residual_backward_no_nan():
+    model = spec_mod.SpectrogramCNN2D(in_channels=4, F=33, base_channels=16,
+                                       depth=4, use_residual=True,
+                                       num_classes=3)
+    x = torch.randn(4, 4, 33, 15)
+    y = torch.randint(0, 3, (4,))
+    loss = torch.nn.functional.cross_entropy(model(x), y)
+    loss.backward()
+    for p in model.parameters():
+        if p.requires_grad:
+            assert p.grad is None or torch.isfinite(p.grad).all()
+
+
+def test_spectrogram_residual_default_off():
+    """Backward compat: use_residual defaults False so existing specs are
+    unaffected."""
+    model = spec_mod.SpectrogramCNN2D(in_channels=4, F=33)
+    assert model.use_residual is False

@@ -115,3 +115,33 @@ def test_smoke_train_eda_decomp_writes_result(tmp_path: Path):
     assert (tmp_path / "result.json").exists()
     persisted = json.loads((tmp_path / "result.json").read_text())
     assert 0.0 <= persisted["best_val_metrics"]["balanced_acc"] <= 1.0
+
+
+def test_cvx_eda_decompose_decim_speedup_preserves_shape_and_signal():
+    """decim>1 solves the cvxEDA QP at a reduced rate then interpolates back.
+    Output shape must match the input, and the decimated decomposition must
+    stay close to the full-rate one (EDA is slow, so this is near-lossless)."""
+    fs = 100
+    T = 1200
+    t = np.arange(T) / fs
+    baseline = 2.0 + 0.01 * t
+    phasic_events = np.zeros(T)
+    for center in [200, 600, 1000]:
+        phasic_events[center:center + 50] = np.linspace(0.3, 0, 50)
+    eda = (baseline + phasic_events).astype(np.float32)
+
+    tonic_full, phasic_full = eda_decomp.cvx_eda_decompose(eda, fs=fs, decim=1)
+    tonic_ds, phasic_ds = eda_decomp.cvx_eda_decompose(eda, fs=fs, decim=4)
+
+    assert tonic_ds.shape == eda.shape
+    assert phasic_ds.shape == eda.shape
+    # decimated tonic tracks the full-rate tonic (slow signal, near-lossless)
+    assert float(np.mean(np.abs(tonic_ds - tonic_full))) < 0.5
+
+
+def test_compute_per_trial_features_accepts_decim():
+    rng = np.random.default_rng(0)
+    trial = rng.standard_normal((800, 4)).astype(np.float32) + 2.0
+    f = eda_decomp.compute_per_trial_features(trial, fs=100, decim=4)
+    assert f.shape == (eda_decomp.EDA_FEATURE_DIM,)
+    assert np.isfinite(f).all()
