@@ -23,6 +23,11 @@ experiments/*
 # Only heavy weights (checkpoints/) stay out of git.
 experiments/iter_*/**/checkpoints/
 experiments/champion_eval/**/checkpoints/
+# Per-seed scratch dirs from ai4pain.multiseed (n_seeds>1). Each seed trains
+# into its own _seed_N/ dir; only the aggregated child_NN/result.json is the
+# canonical artifact the loop reads. The per-seed dirs are debug-only bloat.
+experiments/iter_*/**/_seed_*/
+experiments/champion_eval/**/_seed_*/
 
 # Python
 __pycache__/
