@@ -28,9 +28,16 @@ DEFAULT_GENOME = {
 }
 
 
-def _populate(led, n_iters, fitness_fn, fingerprint_fn, constraint_fn):
-    spec = {"model": {"family": "bigru"}}
+# Diverse family rotation so the Level 2 family_monoculture detector
+# (Priority 0) does not fire -- isolates the stagnation / rejection branches.
+_DIVERSE_FAMILIES = ["bigru", "1d_cnn", "transformer", "multi_stream_bigru"]
+
+
+def _populate(led, n_iters, fitness_fn, fingerprint_fn, constraint_fn,
+              families=None):
+    fams = families or _DIVERSE_FAMILIES
     for i in range(n_iters):
+        spec = {"model": {"family": fams[i % len(fams)]}}
         rid = led.allocate_run_id()
         led.write_experiment(rid, spec, parent_id=None, island_id=i % 4)
         led.write_result(rid, {"balanced_acc": fitness_fn(i)})

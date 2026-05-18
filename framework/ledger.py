@@ -309,6 +309,26 @@ class Ledger:
             })
         return out
 
+    def recent_family_distribution(self, window: int) -> dict[str, int]:
+        """Model-family histogram over the last `window` experiments (newest
+        first). Reads spec_json -> model.family. Used by the Level 2
+        family_monoculture detector (iter_0015 rebuild)."""
+        rows = self._conn.execute(
+            "SELECT spec_json FROM experiments "
+            "ORDER BY created_at DESC LIMIT ?",
+            (int(window),),
+        ).fetchall()
+        dist: dict[str, int] = {}
+        for r in rows:
+            try:
+                spec = json.loads(r["spec_json"])
+                fam = spec.get("model", {}).get("family")
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                fam = None
+            if fam:
+                dist[fam] = dist.get(fam, 0) + 1
+        return dist
+
     def current_iteration(self) -> int:
         """Highest iteration in mutation_traces; 0 if empty."""
         row = self._conn.execute(

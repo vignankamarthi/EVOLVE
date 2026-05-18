@@ -387,3 +387,95 @@ def test_prepare_batch_prompt_includes_critic_when_present(tmp_db_path, minimal_
                 for e in batch)
     assert found, "no critic context in prompts"
     led.close()
+
+
+# ---------- family_quota: hard diversity constraint (iter_0015 rebuild) ----------
+
+import random as _random
+from framework.constraints import ConstraintViolation as _CV
+
+_ALL_FAMILIES = ["bigru", "1d_cnn", "transformer", "multi_stream_bigru",
+                 "multi_stream_aux", "ridge_classifier_cv", "eda_decomp_mlp",
+                 "spectrogram_cnn2d", "hrv_features_mlp"]
+
+
+def test_allocate_family_slots_respects_max_per_family():
+    slots = it.allocate_family_slots(
+        n_children=8, available_families=_ALL_FAMILIES,
+        recent_family_counts={}, rng=_random.Random(0),
+        max_per_family=3, min_families=4)
+    assert len(slots) == 8
+    from collections import Counter
+    for fam, n in Counter(slots).items():
+        assert n <= 3, f"{fam} has {n} > max_per_family"
+
+
+def test_allocate_family_slots_guarantees_min_families():
+    slots = it.allocate_family_slots(
+        n_children=8, available_families=_ALL_FAMILIES,
+        recent_family_counts={}, rng=_random.Random(1),
+        max_per_family=3, min_families=4)
+    assert len(set(slots)) >= 4
+
+
+def test_allocate_family_slots_under_weights_recent_dominant():
+    """multi_stream_bigru dominated recent batches -> should be rare/absent now."""
+    recent = {"multi_stream_bigru": 24}  # monoculture history
+    counts_over_runs = {}
+    for s in range(20):
+        slots = it.allocate_family_slots(
+            n_children=8, available_families=_ALL_FAMILIES,
+            recent_family_counts=recent, rng=_random.Random(s),
+            max_per_family=3, min_families=4)
+        for f in slots:
+            counts_over_runs[f] = counts_over_runs.get(f, 0) + 1
+    ms = counts_over_runs.get("multi_stream_bigru", 0)
+    # a never-used family should be picked more often than the dominant one
+    fresh = counts_over_runs.get("eda_decomp_mlp", 0)
+    assert fresh > ms
+
+
+def test_allocate_family_slots_rejects_impossible_quota():
+    with pytest.raises(ValueError):
+        it.allocate_family_slots(
+            n_children=8, available_families=["bigru", "1d_cnn"],
+            recent_family_counts={}, rng=_random.Random(0),
+            max_per_family=3, min_families=4)
+
+
+def test_validate_batch_family_quota_passes_legal_manifest():
+    manifest = {"experiments": [
+        {"family": "bigru"}, {"family": "bigru"}, {"family": "bigru"},
+        {"family": "transformer"}, {"family": "transformer"},
+        {"family": "spectrogram_cnn2d"}, {"family": "hrv_features_mlp"},
+        {"family": "multi_stream_aux"},
+    ]}
+    assert it.validate_batch_family_quota(manifest, max_per_family=3,
+                                           min_families=4) is None
+
+
+def test_validate_batch_family_quota_rejects_over_cap():
+    manifest = {"experiments": [
+        {"family": "multi_stream_bigru"}] * 4 + [
+        {"family": "bigru"}, {"family": "transformer"},
+        {"family": "hrv_features_mlp"}, {"family": "eda_decomp_mlp"}]}
+    v = it.validate_batch_family_quota(manifest, max_per_family=3,
+                                        min_families=4)
+    assert isinstance(v, _CV)
+
+
+def test_validate_batch_family_quota_rejects_too_few_families():
+    manifest = {"experiments": [
+        {"family": "bigru"}, {"family": "bigru"}, {"family": "bigru"},
+        {"family": "transformer"}, {"family": "transformer"},
+        {"family": "transformer"}, {"family": "1d_cnn"}, {"family": "1d_cnn"}]}
+    v = it.validate_batch_family_quota(manifest, max_per_family=3,
+                                        min_families=4)
+    assert isinstance(v, _CV)
+
+
+def test_assign_blender_flags_marks_repeated_families():
+    slots = ["bigru", "bigru", "bigru", "transformer", "transformer",
+             "spectrogram_cnn2d", "hrv_features_mlp", "multi_stream_aux"]
+    flags = it.assign_blender_flags(slots)
+    assert flags == [True, True, True, True, True, False, False, False]

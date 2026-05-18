@@ -43,6 +43,8 @@ DEFAULT_GENOME = {
     "p_lit_drift_sigma": 0.05,
     "failure_boost_gain": 1.0,
     "introspection_cadence_M": 50,
+    "max_per_family": 3,
+    "min_families": 4,
     "axis_weights": {"balanced_acc": 1.0, "novelty": 0.3, "ece": 0.5, "gap": 0.2},
     "operators_enabled": {"failure_boost": True, "critic": True, "migration": True},
     "operator_slots": {"replacement_rule": "GENITOR"},
@@ -259,11 +261,21 @@ def test_validate_genome_mutation_flags_out_of_bounds():
 # --- propose_mutation against synthetic ledger fixtures ---
 
 
+_DIVERSE_FAMILIES = ["bigru", "1d_cnn", "transformer", "multi_stream_bigru"]
+
+
 def _seed_synthetic_ledger(led, n_iters, fitness_fn, fingerprint_fn,
-                            constraint_fn):
-    """Populate a Ledger with synthetic history for propose_mutation tests."""
-    spec = {"model": {"family": "bigru"}}
+                            constraint_fn, families=None):
+    """Populate a Ledger with synthetic history for propose_mutation tests.
+
+    `families` cycles model families across experiments. Defaults to a diverse
+    4-family rotation so the family_monoculture detector (Priority 0) does NOT
+    fire -- isolating the Priority 1/2/3 branches under test. Monoculture tests
+    pass families=["one_family"].
+    """
+    fams = families or _DIVERSE_FAMILIES
     for i in range(n_iters):
+        spec = {"model": {"family": fams[i % len(fams)]}}
         rid = led.allocate_run_id()
         led.write_experiment(rid, spec, parent_id=None, island_id=i % 4)
         led.write_result(rid, {"balanced_acc": fitness_fn(i)})
@@ -389,3 +401,76 @@ def test_compute_genome_hash_changes_with_content():
     h1 = compute_genome_hash(DEFAULT_GENOME)
     h2 = compute_genome_hash(dict(DEFAULT_GENOME, island_count=10))
     assert h1 != h2
+
+
+# --- family_monoculture detector (iter_0015 framework rebuild) ---
+
+from framework.introspect import detect_family_monoculture
+
+
+def test_detect_family_monoculture_fires_on_dominant_family(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    # 22 of 24 multi_stream_bigru = 91% -> monoculture
+    fams = (["multi_stream_bigru"] * 22) + ["bigru", "transformer"]
+    _seed_synthetic_ledger(
+        led, n_iters=24,
+        fitness_fn=lambda i: 0.50,
+        fingerprint_fn=lambda i: f"fp_{i}",
+        constraint_fn=lambda i: ("rule_guards", True),
+        families=fams)
+    try:
+        assert detect_family_monoculture(led, window=24, threshold=0.7) is True
+    finally:
+        led.close()
+
+
+def test_detect_family_monoculture_quiet_on_diverse_history(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    _seed_synthetic_ledger(
+        led, n_iters=24,
+        fitness_fn=lambda i: 0.50,
+        fingerprint_fn=lambda i: f"fp_{i}",
+        constraint_fn=lambda i: ("rule_guards", True))  # 4-family rotation
+    try:
+        assert detect_family_monoculture(led, window=24, threshold=0.7) is False
+    finally:
+        led.close()
+
+
+def test_propose_mutation_monoculture_tightens_max_per_family(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    _seed_synthetic_ledger(
+        led, n_iters=25,
+        fitness_fn=lambda i: 0.42 + 0.01 * i,            # rising (no stagnation)
+        fingerprint_fn=lambda i: f"fp_{i}",              # diverse fingerprints
+        constraint_fn=lambda i: ("rule_guards", True),   # no rejection
+        families=["multi_stream_bigru"])                 # 100% monoculture
+    try:
+        mut = propose_mutation(led, DEFAULT_GENOME, current_iter=25,
+                               config=DetectorConfig())
+        assert mut is not None
+        assert "max_per_family" in mut.parameter_changes
+        assert mut.parameter_changes["max_per_family"] == 2
+    finally:
+        led.close()
+
+
+def test_ledger_recent_family_distribution_counts(tmp_db_path):
+    led = ledger.Ledger(tmp_db_path)
+    led.init_schema()
+    _seed_synthetic_ledger(
+        led, n_iters=8,
+        fitness_fn=lambda i: 0.5,
+        fingerprint_fn=lambda i: f"fp_{i}",
+        constraint_fn=lambda i: ("rule_guards", True),
+        families=["bigru", "bigru", "transformer"])
+    try:
+        dist = led.recent_family_distribution(window=8)
+        # 8 experiments, pattern bigru,bigru,transformer repeating
+        assert dist["bigru"] + dist["transformer"] == 8
+        assert dist["bigru"] > dist["transformer"]
+    finally:
+        led.close()

@@ -40,11 +40,14 @@ import numpy as np
 CLUSTER_BATCH_CAP = 8
 
 
+from collections import Counter
+
 from framework.breakdown import (
     CriticPopulation,
     stagnation_escalation,
     trigger_migration,
 )
+from framework.constraints import ConstraintViolation
 from framework.fitness import (
     confidence_weighted,
     novelty_score,
@@ -467,6 +470,18 @@ def prepare_batch(ledger: Ledger, island_count: int,
         if include_critic_in_prompt:
             prompt = _prompt_with_critic(prompt, critic_pop_data)
 
+        # crossover_pool: champion specs from OTHER islands, so graft_family
+        # always has cross-family material (iter_0015 rebuild).
+        crossover_pool: list[dict] = []
+        for j in range(island_count):
+            if j == island_id:
+                continue
+            j_bests = _island_best_specs(ledger, j, k=1)
+            if j_bests:
+                crossover_pool.append(j_bests[0])
+            if len(crossover_pool) >= 3:
+                break
+
         entry = {
             "island_id": island_id,
             "parent_run_id": parent_rid,
@@ -475,6 +490,7 @@ def prepare_batch(ledger: Ledger, island_count: int,
             "meta": local_meta,
             "stagnant": stagnant,
             "island_gap": gap,
+            "crossover_pool": crossover_pool,
         }
         if foreign_info is not None:
             entry["migrated_from_island"] = foreign_info[0]
@@ -487,3 +503,95 @@ def prepare_batch(ledger: Ledger, island_count: int,
 def global_child_count(ledger: Ledger) -> int:
     """Per-child global counter. Equals current_iteration() in mutation_traces."""
     return ledger.current_iteration()
+
+
+# --------------------------------------------------------------------------
+# family_quota: hard architectural-diversity constraint (iter_0015 rebuild)
+# --------------------------------------------------------------------------
+# Since iter_0012 the loop collapsed into a multi_stream_bigru monoculture.
+# These functions force every batch to span >= min_families distinct model
+# families with no family exceeding max_per_family. Same-family siblings must
+# differ via a structural operator (the "blender" rule) -- see
+# assign_blender_flags. The functions are standalone: the batch generator
+# calls allocate_family_slots up front, then validate_batch_family_quota as a
+# hard gate before the manifest is written.
+
+def allocate_family_slots(n_children: int,
+                          available_families: list[str],
+                          recent_family_counts: dict[str, int],
+                          rng: random.Random,
+                          max_per_family: int = 3,
+                          min_families: int = 4) -> list[str]:
+    """Allocate a target model family to each of `n_children` batch slots.
+
+    Guarantees: no family appears more than `max_per_family` times, and at
+    least `min_families` distinct families appear. Families that dominated
+    `recent_family_counts` are under-weighted so the loop self-corrects out
+    of a monoculture.
+
+    Raises ValueError if the quota is unsatisfiable for the given inputs.
+    """
+    fams = list(available_families)
+    if min_families > len(fams):
+        raise ValueError(
+            f"min_families={min_families} exceeds available "
+            f"families={len(fams)}")
+    if min_families > n_children:
+        raise ValueError(
+            f"min_families={min_families} exceeds n_children={n_children}")
+    if max_per_family * len(fams) < n_children:
+        raise ValueError(
+            f"max_per_family={max_per_family} x {len(fams)} families cannot "
+            f"fill {n_children} slots")
+
+    # Order families least-recently-used first; random tie-break.
+    rng.shuffle(fams)
+    fams.sort(key=lambda f: recent_family_counts.get(f, 0))
+
+    counts: dict[str, int] = {f: 0 for f in fams}
+    slots: list[str] = []
+    # 1. Seed min_families distinct families (the least-used ones).
+    for f in fams[:min_families]:
+        slots.append(f)
+        counts[f] += 1
+    # 2. Fill the rest: least-assigned-so-far first, then least-recently-used,
+    #    capped at max_per_family.
+    while len(slots) < n_children:
+        cand = [f for f in fams if counts[f] < max_per_family]
+        cand.sort(key=lambda f: (counts[f], recent_family_counts.get(f, 0)))
+        chosen = cand[0]
+        slots.append(chosen)
+        counts[chosen] += 1
+    rng.shuffle(slots)
+    return slots
+
+
+def validate_batch_family_quota(manifest: dict,
+                                 max_per_family: int = 3,
+                                 min_families: int = 4
+                                 ) -> ConstraintViolation | None:
+    """Hard gate run BEFORE a manifest ships. Returns a ConstraintViolation if
+    the realized batch violates the family quota, else None."""
+    families = [e.get("family") for e in manifest.get("experiments", [])]
+    counts = Counter(families)
+    for fam, n in counts.items():
+        if n > max_per_family:
+            return ConstraintViolation(
+                rule="family_quota",
+                detail=(f"family {fam!r} appears {n} times "
+                        f"(max_per_family={max_per_family})"))
+    if len(counts) < min_families:
+        return ConstraintViolation(
+            rule="family_quota",
+            detail=(f"batch spans {len(counts)} families "
+                    f"(min_families={min_families})"))
+    return None
+
+
+def assign_blender_flags(slots: list[str]) -> list[bool]:
+    """The "blender" rule: any family with >= 2 slots in the batch must have
+    its siblings differ via a structural operator (swap_encoder, swap_fusion,
+    add_aux_stream, graft_family) -- not hyperparameter knobs. Returns a
+    per-slot bool: True means that slot requires a structural mutation."""
+    counts = Counter(slots)
+    return [counts[f] >= 2 for f in slots]

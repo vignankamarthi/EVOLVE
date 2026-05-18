@@ -49,6 +49,10 @@ GENOME_RULE_GUARDS: dict[str, tuple[float, float]] = {
     "p_lit_drift_sigma": (0.0, 0.2),
     "failure_boost_gain": (0.0, 5.0),
     "introspection_cadence_M": (10, 500),
+    # iter_0015 framework rebuild: family-quota knobs. Level 2 tightens
+    # max_per_family on family_monoculture.
+    "max_per_family": (2, 8),
+    "min_families": (2, 8),
 }
 
 
@@ -111,6 +115,23 @@ def should_fire(current_iter: int, last_fire_iter: int,
     if entropy_ratio < cfg.entropy_drop_ratio:
         return True
     return False
+
+
+def detect_family_monoculture(ledger, window: int = 24,
+                              threshold: float = 0.7) -> bool:
+    """Family-monoculture detector (iter_0015 rebuild).
+
+    Returns True when a single model family accounts for >= `threshold` of the
+    last `window` experiments. This is the pathology that let the loop stall
+    from iter_0012-0014 (24 consecutive multi_stream_bigru children). When it
+    fires, propose_mutation tightens max_per_family to force diversity.
+    """
+    dist = ledger.recent_family_distribution(window)
+    total = sum(dist.values())
+    if total == 0:
+        return False
+    dominant = max(dist.values())
+    return (dominant / total) >= threshold
 
 
 # --- Typed operator constructors (FRAMEWORK.md Section 9.5) ---
@@ -321,6 +342,17 @@ def propose_mutation(ledger, current_genome: dict, current_iter: int,
     cfg = config or DetectorConfig()
     window = cfg.window
     parent_hash = compute_genome_hash(current_genome)
+
+    # ----- Priority 0: family monoculture (iter_0015 rebuild) -----
+    # Highest priority: a same-family monoculture means the search has stopped
+    # exploring architectures entirely. Tighten max_per_family to force the
+    # next batches to diversify.
+    if detect_family_monoculture(ledger, window=24, threshold=0.7):
+        current_mpf = current_genome.get("max_per_family", 3)
+        mpf_lo, _ = GENOME_RULE_GUARDS["max_per_family"]
+        if current_mpf > mpf_lo:
+            return set_threshold(parent_hash, current_genome,
+                                 "max_per_family", mpf_lo)
 
     # ----- Priority 1: over-rejection on any rule -----
     rates: list[tuple[float, str]] = []
