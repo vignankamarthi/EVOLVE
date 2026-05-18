@@ -1,0 +1,30 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "hrv_features",
+    "fs": 100
+  },
+  "model": {
+    "dropout": 0.3,
+    "family": "hrv_features_mlp",
+    "hidden": 128
+  },
+  "name": "iter_0015_c07_hrv_wide",
+  "preprocessing": {
+    "normalize": "per_feature_zscore"
+  },
+  "reasoning_summary": "iter_0015 c07. hrv_features_mlp revived: hidden 64->128, dropout 0.3, focal_gamma=1.0, epochs 50->80. n_seeds=3.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 80,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 15070
+  }
+}

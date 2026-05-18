@@ -1,0 +1,30 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "d_model": 64,
+    "dropout": 0.1,
+    "family": "transformer",
+    "ff_dim": 128,
+    "num_heads": 4,
+    "num_layers": 4
+  },
+  "name": "iter_0015_c04_transformer_deep",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0015 c04. transformer family, num_layers 3->4, epochs 110->130. Diversity slot: revive the transformer island (best was only 0.449). n_seeds=3.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 130,
+    "loss": "ce_class_balanced",
+    "lr": 0.0005,
+    "n_seeds": 3,
+    "optimizer": "adamw",
+    "seed": 15040
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "spectrogram",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 32,
+    "nperseg": 64
+  },
+  "model": {
+    "base_channels": 24,
+    "depth": 3,
+    "dropout": 0.25,
+    "family": "spectrogram_cnn2d"
+  },
+  "name": "iter_0015_c06_spectrogram_deep",
+  "preprocessing": {
+    "normalize": "per_channel_zscore"
+  },
+  "reasoning_summary": "iter_0015 c06. spectrogram_cnn2d revived: base_channels 16->24, depth 2->3, dropout 0.25, focal_gamma=1.0, epochs 30->60. Never mutated before. n_seeds=3.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 60,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 15060
+  }
+}

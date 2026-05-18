@@ -1,0 +1,31 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "graft_coherence": true,
+  "model": {
+    "d_model": 64,
+    "dropout": 0.1,
+    "family": "transformer",
+    "ff_dim": 128,
+    "num_heads": 4,
+    "num_layers": 3
+  },
+  "name": "iter_0015_c05_graft",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0015 c05. graft_family crossover champion r_00000089 x transformer. model gene pinned to transformer to fill the quota slot (rng seed 151); other 4 genes fully random. graft_family crossover of A='A' x B='B'. Gene origins: preprocessing<-B, feature_extraction<-B, model<-B, training<-B, decode<-A. predicted_coherence=True. n_seeds=3.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 110,
+    "loss": "ce_class_balanced",
+    "lr": 0.0005,
+    "n_seeds": 3,
+    "optimizer": "adamw",
+    "seed": 15050
+  }
+}

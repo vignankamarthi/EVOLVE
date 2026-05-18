@@ -1,0 +1,35 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "hrv_aux",
+    "fs": 100
+  },
+  "model": {
+    "encoder_type": "gru",
+    "family": "multi_stream_aux",
+    "fusion": "late_concat",
+    "fusion_dropout": 0.2,
+    "hrv_hidden": 32,
+    "per_channel_hidden": 40,
+    "per_channel_layers": 2
+  },
+  "name": "iter_0015_c03_add_aux_stream",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0015 c03. add_aux_stream: champion multi_stream body + 26-dim HRV side-input MLP. First multi_stream_aux child. n_seeds=3.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 110,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 15030
+  }
+}
