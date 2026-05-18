@@ -6,7 +6,15 @@ single-number summary is ever sufficient on a 3-class imbalanced problem.
 Returns:
   balanced_acc, macro_f1, per_class_pr (dict of (precision, recall) per class
                                          keyed by NP / AP / HP),
-  confusion_3x3 (3x3 list of lists), auc_ovr (one-vs-rest), ece (calibration).
+  confusion_3x3 (3x3 list of lists), auc_ovr (one-vs-rest), ece (calibration),
+  binary (Pain-vs-No-Pain block derived from the 3-class result).
+
+The `binary` block is the 3-class prediction projected down: No Pain = Baseline
+(label 0), Pain = ARM (1) U HAND (2). It is a free diagnostic -- the same model,
+no separate training. binary AUC collapses PROBABILITIES (P(pain) = p_AP + p_HP)
+rather than the argmax so soft confidence is preserved. The 3-class
+balanced_acc remains the primary fitness / challenge metric; binary is the
+"can it detect pain at all" lens.
 
 `param_count`, `train_seconds`, `inference_seconds`, `generalization_gap`
 are merged at the call site since they're not derivable from (y_true, y_pred, proba).
@@ -106,4 +114,40 @@ def full_metric_suite(y_true: np.ndarray, y_pred: np.ndarray,
         "confusion_3x3": cm,
         "auc_ovr": auc,
         "ece": ece,
+        "binary": _binary_block(y_true, y_pred, proba),
+    }
+
+
+def _binary_block(y_true: np.ndarray, y_pred: np.ndarray,
+                  proba: np.ndarray) -> dict:
+    """Pain-vs-No-Pain metrics projected from the 3-class result.
+
+    No Pain = Baseline (label 0); Pain = ARM (1) U HAND (2). AUC collapses
+    probabilities: P(pain) = p_AP + p_HP. This is a diagnostic lens, not the
+    fitness metric.
+    """
+    y_true_bin = (y_true > 0).astype(int)
+    y_pred_bin = (y_pred > 0).astype(int)
+    p_pain = proba[:, 1] + proba[:, 2]
+
+    bin_bal = float(balanced_accuracy_score(y_true_bin, y_pred_bin))
+    bin_f1 = float(f1_score(y_true_bin, y_pred_bin, pos_label=1,
+                            zero_division=0))
+    bin_p = float(precision_score(y_true_bin, y_pred_bin, pos_label=1,
+                                  zero_division=0))
+    bin_r = float(recall_score(y_true_bin, y_pred_bin, pos_label=1,
+                               zero_division=0))
+    bin_cm = confusion_matrix(y_true_bin, y_pred_bin, labels=[0, 1]).tolist()
+    try:
+        bin_auc = float(roc_auc_score(y_true_bin, p_pain))
+    except ValueError:
+        bin_auc = math.nan
+
+    return {
+        "balanced_acc": bin_bal,
+        "f1": bin_f1,
+        "pain_precision": bin_p,
+        "pain_recall": bin_r,
+        "auc": bin_auc,
+        "confusion_2x2": bin_cm,
     }
