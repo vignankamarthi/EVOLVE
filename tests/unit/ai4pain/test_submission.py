@@ -86,6 +86,77 @@ def test_write_predictions_csv_val_format_has_true_labels(tmp_path):
     assert rows[1]["pred_name"] == "AP"   # predicted label 1
 
 
+def test_train_and_predict_multi_seed_aggregates(tmp_path):
+    """n_seeds>1 -> _train_and_predict runs N trainings (fresh model each),
+    averages val+test probability tables, and aggregates per-seed metrics.
+    A minimal Linear model on synthetic data is enough to exercise the loop."""
+    class _Linear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(4, 3)
+
+        def forward(self, x):
+            return self.fc(x.mean(dim=1))   # pool time dim
+
+    rng = np.random.default_rng(0)
+    Xtr = rng.standard_normal((12, 5, 4)).astype(np.float32)
+    Xv = rng.standard_normal((6, 5, 4)).astype(np.float32)
+    Xte = rng.standard_normal((6, 5, 4)).astype(np.float32)
+    ytr = np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    yv = np.array([0, 1, 2, 0, 1, 2])
+    subj_v = [10, 10, 10, 11, 11, 11]
+    subj_te = [20, 20, 20, 21, 21, 21]
+    train_cfg = {"epochs": 1, "batch_size": 6, "lr": 1e-2, "seed": 42,
+                 "n_seeds": 3, "optimizer": "adam"}
+    spec = {"name": "multi_seed_test", "model": {"family": "test"},
+            "training": train_cfg}
+
+    result = submission._train_and_predict(
+        lambda: _Linear(), [Xtr], ytr, [Xv], yv, subj_v,
+        [Xte], subj_te, train_cfg, tmp_path, spec)
+
+    assert result["n_seeds"] == 3
+    assert result["n_seeds_completed"] == 3
+    assert len(result["per_seed_val_balanced_acc"]) == 3
+    # CSVs are written from the AVERAGED probability table
+    assert (tmp_path / "test_predictions.csv").exists()
+    assert (tmp_path / "val_predictions.csv").exists()
+    rows = list(csv.DictReader(open(tmp_path / "val_predictions.csv")))
+    assert len(rows) == len(yv)
+    # Probabilities still sum to ~1 after averaging
+    for r in rows:
+        s = float(r["p_NP"]) + float(r["p_AP"]) + float(r["p_HP"])
+        assert abs(s - 1.0) < 1e-3
+
+
+def test_train_and_predict_single_seed_default(tmp_path):
+    """No n_seeds set -> single-seed behavior (backwards compatible)."""
+    class _Linear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(4, 3)
+
+        def forward(self, x):
+            return self.fc(x.mean(dim=1))
+
+    rng = np.random.default_rng(0)
+    Xtr = rng.standard_normal((6, 5, 4)).astype(np.float32)
+    Xv = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    Xte = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    ytr = np.array([0, 0, 1, 1, 2, 2])
+    train_cfg = {"epochs": 1, "batch_size": 6, "lr": 1e-2, "seed": 42}
+    spec = {"name": "single", "model": {"family": "test"},
+            "training": train_cfg}
+
+    result = submission._train_and_predict(
+        lambda: _Linear(), [Xtr], ytr, [Xv], np.array([0, 1, 2]), [7, 7, 7],
+        [Xte], [8, 8, 8], train_cfg, tmp_path, spec)
+
+    assert result["n_seeds"] == 1
+    assert result["n_seeds_completed"] == 1
+    assert len(result["per_seed_val_balanced_acc"]) == 1
+
+
 def test_run_submission_rejects_unsupported_family(tmp_path):
     spec = {"name": "x", "model": {"family": "transformer"},
             "training": {}, "feature_extraction": {}}

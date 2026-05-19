@@ -136,25 +136,12 @@ def _write_predictions_csv(path, subjects, preds, probas, true_labels=None):
             w.writerow(row)
 
 
-def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
-                       subjects_val, test_inputs, subjects_test,
-                       train_cfg, run_dir, spec):
-    """Generic train (early-stop on val) + predict loop.
-
-    At the best-val epoch, runs inference on BOTH the val split (->
-    val_predictions.csv, with true labels, for post-hoc ensembling) and the
-    blinded test split (-> test_predictions.csv).
-
-    *_inputs are lists of np.float32 arrays; the model is called as
-    model(*tensors), so 1-input (spectrogram/multi_stream) and 2-input (dual)
-    families share this loop.
-    """
-    device = _device()
+def _train_one_seed(model, train_inputs, y_train, val_inputs, y_val,
+                    test_inputs, train_cfg, device):
+    """Train ONE model (one seed already set by the caller), early-stop on
+    val, return (best_val_metrics, val_proba, test_proba) from the best-val
+    epoch. Pure single-seed; no I/O."""
     model = model.to(device)
-    seed = int(train_cfg.get("seed", 42))
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-
     tr_t = [torch.from_numpy(a).to(device) for a in train_inputs]
     va_t = [torch.from_numpy(a).to(device) for a in val_inputs]
     te_t = [torch.from_numpy(a).to(device) for a in test_inputs]
@@ -166,13 +153,12 @@ def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
     optim = (torch.optim.AdamW if train_cfg.get("optimizer") == "adamw"
              else torch.optim.Adam)(model.parameters(), lr=lr)
     loss_fn = _make_loss(train_cfg, y_train, device)
-
     loader = DataLoader(TensorDataset(*tr_t, ytr_t), batch_size=bs,
                         shuffle=True)
+
     best_val = -math.inf
     best_state = None
     best_val_metrics: dict = {}
-    t0 = time.time()
     for epoch in range(epochs):
         model.train()
         for batch in loader:
@@ -191,32 +177,103 @@ def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
             best_val_metrics = vm
             best_state = {k: v.detach().cpu().clone()
                           for k, v in model.state_dict().items()}
-        print(f"[submission] ep {epoch}: val_bal={vm['balanced_acc']:.4f}",
+        print(f"[submission]   ep {epoch}: val_bal={vm['balanced_acc']:.4f}",
               flush=True)
 
     if best_state is not None:
         model.load_state_dict(best_state)
     model.eval()
     with torch.no_grad():
-        te_logits = model(*te_t)
-        te_proba = te_logits.softmax(1).cpu().numpy()
-        te_pred = te_logits.argmax(1).cpu().numpy()
-        # val predictions at the best-val epoch -- for post-hoc ensembling
-        va_logits = model(*va_t)
-        va_proba = va_logits.softmax(1).cpu().numpy()
-        va_pred = va_logits.argmax(1).cpu().numpy()
+        va_proba = model(*va_t).softmax(1).cpu().numpy()
+        te_proba = model(*te_t).softmax(1).cpu().numpy()
+    return best_val_metrics, va_proba, te_proba
+
+
+def _train_and_predict(model_factory, train_inputs, y_train, val_inputs,
+                       y_val, subjects_val, test_inputs, subjects_test,
+                       train_cfg, run_dir, spec):
+    """Multi-seed train + predict loop.
+
+    `model_factory: () -> nn.Module` builds a FRESH model per seed (otherwise
+    we would continue training the same weights instead of starting over).
+    `train_cfg.n_seeds` controls how many seeds; default 1 (single-seed,
+    backwards compatible). With N>1 we train N independent models and average
+    their val + test probability tables BEFORE the argmax -- a soft-vote at
+    the per-trial level that cancels the GPU non-determinism + initialization
+    lottery (the same noise the framework's n_seeds=3/5 fitness mitigates).
+
+    Writes one averaged `val_predictions.csv` and one averaged
+    `test_predictions.csv`; the result.json keeps per-seed metrics for
+    transparency.
+    """
+    device = _device()
+    base_seed = int(train_cfg.get("seed", 42))
+    n_seeds = max(1, int(train_cfg.get("n_seeds", 1)))
+    seeds = list(range(base_seed, base_seed + n_seeds))
+
+    va_proba_acc = np.zeros((len(y_val), 3), dtype=np.float64)
+    te_proba_acc = np.zeros((len(subjects_test), 3), dtype=np.float64)
+    per_seed_metrics: list[dict] = []
+    per_seed_balanced_acc: list[float] = []
+    t0 = time.time()
+    n_failed = 0
+
+    for seed in seeds:
+        print(f"[submission] seed {seed} ({len(per_seed_metrics) + 1}"
+              f"/{n_seeds})", flush=True)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        try:
+            model = model_factory()
+            best_val_metrics, va_proba, te_proba = _train_one_seed(
+                model, train_inputs, y_train, val_inputs, y_val,
+                test_inputs, train_cfg, device)
+        except Exception as e:
+            # One bad seed (CUDA OOM etc.) does not kill the run.
+            print(f"[submission] seed {seed} FAILED: {e}", flush=True)
+            n_failed += 1
+            continue
+        va_proba_acc += va_proba
+        te_proba_acc += te_proba
+        per_seed_metrics.append(best_val_metrics)
+        per_seed_balanced_acc.append(best_val_metrics["balanced_acc"])
+        print(f"[submission] seed {seed} best val_bal="
+              f"{best_val_metrics['balanced_acc']:.4f}", flush=True)
+
+    n_completed = len(per_seed_metrics)
+    if n_completed == 0:
+        raise RuntimeError(f"all {n_seeds} seeds failed")
+    va_proba_avg = (va_proba_acc / n_completed).astype(np.float32)
+    te_proba_avg = (te_proba_acc / n_completed).astype(np.float32)
+    va_pred = va_proba_avg.argmax(1)
+    te_pred = te_proba_avg.argmax(1)
 
     run_dir = Path(run_dir)
     pred_path = run_dir / "test_predictions.csv"
-    _write_predictions_csv(pred_path, subjects_test, te_pred, te_proba)
+    _write_predictions_csv(pred_path, subjects_test, te_pred, te_proba_avg)
     val_path = run_dir / "val_predictions.csv"
-    _write_predictions_csv(val_path, subjects_val, va_pred, va_proba,
+    _write_predictions_csv(val_path, subjects_val, va_pred, va_proba_avg,
                            true_labels=y_val)
+
+    # Aggregate val metrics across seeds: mean of per-seed bests.
+    mean_val = float(np.mean(per_seed_balanced_acc))
+    std_val = float(np.std(per_seed_balanced_acc)) if n_completed > 1 else 0.0
+    agg_val_metrics = {"balanced_acc": mean_val,
+                       "balanced_acc_std": std_val}
+    # Carry along scalar mean for any other shared keys (macro_f1 etc.)
+    for k in ("macro_f1", "auc_ovr", "ece"):
+        vals = [m[k] for m in per_seed_metrics if k in m]
+        if vals:
+            agg_val_metrics[k] = float(np.mean(vals))
 
     result = {
         "name": spec.get("name", "submission"),
         "submission": True,
-        "best_val_metrics": best_val_metrics,
+        "n_seeds": n_seeds,
+        "n_seeds_completed": n_completed,
+        "n_seeds_failed": n_failed,
+        "per_seed_val_balanced_acc": per_seed_balanced_acc,
+        "best_val_metrics": agg_val_metrics,
         "test_n_trials": int(len(te_pred)),
         "test_pred_class_counts": {LABEL_NAMES[c]: int((te_pred == c).sum())
                                     for c in range(3)},
@@ -227,7 +284,8 @@ def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
         "spec": spec,
     }
     _atomic_write_json(run_dir / "result.json", result)
-    print(f"[submission] best val bal_acc: {best_val:.4f}", flush=True)
+    print(f"[submission] n_seeds={n_completed}/{n_seeds}  "
+          f"val_bal mean={mean_val:.4f}  std={std_val:.4f}", flush=True)
     print(f"[submission] val predictions -> {val_path} "
           f"({len(va_pred)} trials)", flush=True)
     print(f"[submission] test predictions -> {pred_path} "
@@ -277,23 +335,25 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
     if family == "spectrogram_cnn2d":
         Str, Sv, Ste, F = _prep_spectrogram(
             X_train, X_val, X_test, _spectrogram_tf_kwargs(fe))
-        model = SpectrogramCNN2D(
-            in_channels=len(signals), F=F,
-            base_channels=int(mc.get("base_channels", 16)),
-            depth=int(mc.get("depth", 2)),
-            dropout=float(mc.get("dropout", 0.2)),
-            use_residual=bool(mc.get("use_residual", False)),
-            num_classes=3)
-        return _train_and_predict(model, [Str], y_train, [Sv], y_val,
+        def make_model():
+            return SpectrogramCNN2D(
+                in_channels=len(signals), F=F,
+                base_channels=int(mc.get("base_channels", 16)),
+                depth=int(mc.get("depth", 2)),
+                dropout=float(mc.get("dropout", 0.2)),
+                use_residual=bool(mc.get("use_residual", False)),
+                num_classes=3)
+        return _train_and_predict(make_model, [Str], y_train, [Sv], y_val,
                                    subj_val, [Ste], subj_test, train_cfg,
                                    run_dir, spec)
 
     if family == "multi_stream_bigru":
         Xtr, Xv, Xte = _prep_sequence(X_train, X_val, X_test)
-        model = _multi_stream_factory(
-            in_channels=len(signals), T_max=Xtr.shape[1],
-            model_cfg=mc, num_classes=3)
-        return _train_and_predict(model, [Xtr], y_train, [Xv], y_val,
+        def make_model():
+            return _multi_stream_factory(
+                in_channels=len(signals), T_max=Xtr.shape[1],
+                model_cfg=mc, num_classes=3)
+        return _train_and_predict(make_model, [Xtr], y_train, [Xv], y_val,
                                    subj_val, [Xte], subj_test, train_cfg,
                                    run_dir, spec)
 
@@ -301,12 +361,13 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
     Xtr, Xv, Xte = _prep_sequence(X_train, X_val, X_test)
     Str, Sv, Ste, F = _prep_spectrogram(
         X_train, X_val, X_test, _spectrogram_tf_kwargs(fe))
-    model = DualEnsembleNet(
-        in_channels=len(signals), spec_F=F, num_classes=3,
-        gru_cfg=mc.get("gru_cfg", {}), cnn_cfg=mc.get("cnn_cfg", {}))
-    return _train_and_predict(model, [Xtr, Str], y_train, [Xv, Sv], y_val,
-                               subj_val, [Xte, Ste], subj_test, train_cfg,
-                               run_dir, spec)
+    def make_model():
+        return DualEnsembleNet(
+            in_channels=len(signals), spec_F=F, num_classes=3,
+            gru_cfg=mc.get("gru_cfg", {}), cnn_cfg=mc.get("cnn_cfg", {}))
+    return _train_and_predict(make_model, [Xtr, Str], y_train, [Xv, Sv],
+                               y_val, subj_val, [Xte, Ste], subj_test,
+                               train_cfg, run_dir, spec)
 
 
 def run_from_dir(run_dir: Path, data_root: Path) -> dict:

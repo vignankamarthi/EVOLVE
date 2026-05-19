@@ -40,6 +40,7 @@
     "loss": "ce_class_balanced",
     "lr": 0.001,
     "optimizer": "adam",
-    "seed": 20003
+    "seed": 20003,
+    "n_seeds": 20
   }
 }
