@@ -1,0 +1,45 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "dual_ensemble",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 64,
+    "nperseg": 128
+  },
+  "model": {
+    "cnn_cfg": {
+      "base_channels": 24,
+      "depth": 3,
+      "dropout": 0.25,
+      "use_residual": false
+    },
+    "family": "dual_ensemble",
+    "gru_cfg": {
+      "encoder_type": "gru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.2,
+      "per_channel_hidden": 40,
+      "per_channel_layers": 2
+    }
+  },
+  "name": "iter_0019_c01_confirm_dual_baseline",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0019 c01. CONFIRMATION n_seeds=5 of dual_baseline (r144, 0.5347). Structural sibling: nperseg128.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 120,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 5,
+    "optimizer": "adam",
+    "seed": 19010
+  }
+}

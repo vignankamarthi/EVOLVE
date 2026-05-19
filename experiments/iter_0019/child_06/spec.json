@@ -1,0 +1,31 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "encoder_type": "gru",
+    "family": "multi_stream_bigru",
+    "fusion": "mid_fusion",
+    "fusion_dropout": 0.2,
+    "per_channel_hidden": 40,
+    "per_channel_layers": 2
+  },
+  "name": "iter_0019_c06_gru_mid_fusion",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0019 c06. EXPLORE: multi_stream mid_fusion -- the only fusion mode never tested. Channels projected + concatenated before one shared encoder. Structural sibling of c05.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 120,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 19060
+  }
+}

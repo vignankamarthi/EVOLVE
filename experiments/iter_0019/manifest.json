@@ -1,0 +1,84 @@
+{
+  "experiments": [
+    {
+      "run_id": "r_00000160",
+      "run_dir": "experiments/iter_0019/child_00",
+      "island": 8,
+      "family": "dual_ensemble",
+      "parent": "r_00000146",
+      "pass": "iter_0019",
+      "tag": "confirm_dual_nperseg192",
+      "n_seeds": 5
+    },
+    {
+      "run_id": "r_00000161",
+      "run_dir": "experiments/iter_0019/child_01",
+      "island": 8,
+      "family": "dual_ensemble",
+      "parent": "r_00000144",
+      "pass": "iter_0019",
+      "tag": "confirm_dual_baseline",
+      "n_seeds": 5
+    },
+    {
+      "run_id": "r_00000162",
+      "run_dir": "experiments/iter_0019/child_02",
+      "island": 8,
+      "family": "dual_ensemble",
+      "parent": "r_00000146",
+      "pass": "iter_0019",
+      "tag": "dual_nperseg192_residual",
+      "n_seeds": 3
+    },
+    {
+      "run_id": "r_00000163",
+      "run_dir": "experiments/iter_0019/child_03",
+      "island": 6,
+      "family": "spectrogram_cnn2d",
+      "parent": "r_00000133",
+      "pass": "iter_0019",
+      "tag": "confirm_spec_champion",
+      "n_seeds": 5
+    },
+    {
+      "run_id": "r_00000164",
+      "run_dir": "experiments/iter_0019/child_04",
+      "island": 6,
+      "family": "spectrogram_cnn2d",
+      "parent": "r_00000133",
+      "pass": "iter_0019",
+      "tag": "spec_residual_nperseg192",
+      "n_seeds": 3
+    },
+    {
+      "run_id": "r_00000165",
+      "run_dir": "experiments/iter_0019/child_05",
+      "island": 3,
+      "family": "multi_stream_bigru",
+      "parent": "r_00000130",
+      "pass": "iter_0019",
+      "tag": "confirm_gru_champion",
+      "n_seeds": 5
+    },
+    {
+      "run_id": "r_00000166",
+      "run_dir": "experiments/iter_0019/child_06",
+      "island": 3,
+      "family": "multi_stream_bigru",
+      "parent": "r_00000130",
+      "pass": "iter_0019",
+      "tag": "gru_mid_fusion",
+      "n_seeds": 3
+    },
+    {
+      "run_id": "r_00000167",
+      "run_dir": "experiments/iter_0019/child_07",
+      "island": 7,
+      "family": "hrv_features_mlp",
+      "parent": "r_00000082",
+      "pass": "iter_0019",
+      "tag": "hrv_wide",
+      "n_seeds": 3
+    }
+  ]
+}

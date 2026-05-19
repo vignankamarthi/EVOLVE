@@ -1,0 +1,35 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "spectrogram",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 96,
+    "nperseg": 192
+  },
+  "model": {
+    "base_channels": 24,
+    "depth": 4,
+    "dropout": 0.25,
+    "family": "spectrogram_cnn2d",
+    "use_residual": true
+  },
+  "name": "iter_0019_c04_spec_residual_nperseg192",
+  "preprocessing": {
+    "normalize": "per_channel_zscore"
+  },
+  "reasoning_summary": "iter_0019 c04. EXPLORE: spectrogram residual (depth 4) + nperseg192. Structural sibling.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 90,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 19040
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "encoder_type": "gru",
+    "family": "multi_stream_bigru",
+    "fusion": "late_concat",
+    "fusion_dropout": 0.2,
+    "per_channel_hidden": 40,
+    "per_channel_layers": 2
+  },
+  "name": "iter_0019_c05_confirm_gru_champion",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0019 c05. CONFIRMATION n_seeds=5 of the GRU co-champion (r130). Read 0.5340 (iter_0016) then 0.5193 (iter_0018) -- needs a tighter estimate.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 150,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 5,
+    "optimizer": "adam",
+    "seed": 19050
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "spectrogram",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 64,
+    "nperseg": 128
+  },
+  "model": {
+    "base_channels": 24,
+    "depth": 3,
+    "dropout": 0.25,
+    "family": "spectrogram_cnn2d",
+    "use_residual": false
+  },
+  "name": "iter_0019_c03_confirm_spec_champion",
+  "preprocessing": {
+    "normalize": "per_channel_zscore"
+  },
+  "reasoning_summary": "iter_0019 c03. CONFIRMATION n_seeds=5 of the spectrogram champion (r133, nperseg128, 0.5363).",
+  "training": {
+    "batch_size": 32,
+    "epochs": 90,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 5,
+    "optimizer": "adam",
+    "seed": 19030
+  }
+}

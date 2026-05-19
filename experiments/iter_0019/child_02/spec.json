@@ -1,0 +1,45 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "dual_ensemble",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 96,
+    "nperseg": 192
+  },
+  "model": {
+    "cnn_cfg": {
+      "base_channels": 24,
+      "depth": 4,
+      "dropout": 0.25,
+      "use_residual": true
+    },
+    "family": "dual_ensemble",
+    "gru_cfg": {
+      "encoder_type": "gru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.2,
+      "per_channel_hidden": 40,
+      "per_channel_layers": 2
+    }
+  },
+  "name": "iter_0019_c02_dual_nperseg192_residual",
+  "preprocessing": {
+    "normalize": "per_channel_zscore",
+    "padding": "right_zero_to_global_max"
+  },
+  "reasoning_summary": "iter_0019 c02. EXPLORE: dual_ensemble combining the two iter_0018 modest helpers -- nperseg192 + residual CNN (depth 4).",
+  "training": {
+    "batch_size": 32,
+    "epochs": 120,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "n_seeds": 3,
+    "optimizer": "adam",
+    "seed": 19020
+  }
+}
