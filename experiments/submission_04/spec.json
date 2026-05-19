@@ -1,0 +1,35 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": {
+    "family": "spectrogram",
+    "fs": 100,
+    "log_scale": true,
+    "noverlap": 64,
+    "nperseg": 128,
+    "transform": "stft"
+  },
+  "model": {
+    "base_channels": 32,
+    "depth": 4,
+    "dropout": 0.25,
+    "family": "spectrogram_cnn2d",
+    "use_residual": true
+  },
+  "name": "submission_04_spectrogram_residual",
+  "preprocessing": {
+    "normalize": "per_channel_zscore"
+  },
+  "reasoning_summary": "HIP-G submission #4. Residual spectrogram CNN (r148): 2D STFT pipeline with ResNet-style blocks (depth 4) -- a distinct function class from the plain spectrogram of #1.",
+  "training": {
+    "batch_size": 32,
+    "epochs": 90,
+    "focal_gamma": 1.0,
+    "loss": "ce_class_balanced",
+    "lr": 0.001,
+    "optimizer": "adam",
+    "seed": 20004
+  }
+}

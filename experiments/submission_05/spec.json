@@ -1,0 +1,20 @@
+{
+  "data": {},
+  "decode": {
+    "strategy": "argmax"
+  },
+  "feature_extraction": null,
+  "model": {
+    "components": [
+      "experiments/submission_01",
+      "experiments/submission_02",
+      "experiments/submission_03",
+      "experiments/submission_04"
+    ],
+    "family": "prediction_ensemble"
+  },
+  "name": "submission_05_prediction_ensemble",
+  "preprocessing": {},
+  "reasoning_summary": "HIP-G submission #5. Prediction ensemble: averages the per-trial class probabilities of submissions #1-#4 (independently trained), argmax. Variance reduction across decorrelated models.",
+  "training": {}
+}
