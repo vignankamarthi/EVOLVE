@@ -76,6 +76,48 @@ def test_run_ensemble_writes_predictions(tmp_path):
     assert rows[1]["pred_name"] == "AP"   # avg [0.15,0.75,0.1]
 
 
+def test_average_predictions_weighted(tmp_path):
+    """Weighted soft-vote: a heavy weight on the first component pulls the
+    average toward its prediction. weights are normalized internally."""
+    a = tmp_path / "a.csv"
+    b = tmp_path / "b.csv"
+    # trial 0: A confidently NP, B confidently HP
+    _write_pred_csv(a, [(7, 0, 0.9, 0.05, 0.05)])
+    _write_pred_csv(b, [(7, 0, 0.05, 0.05, 0.9)])
+    # uniform -> avg [0.475, 0.05, 0.475] -- a near-tie
+    uniform = ens.average_predictions([a, b])
+    # weight A 3:1 -> avg = [0.75*0.9+0.25*0.05, ...] -> NP dominates
+    weighted = ens.average_predictions([a, b], weights=[3, 1])
+    assert weighted[0]["pred_label"] == 0          # NP -- A's call wins
+    assert weighted[0]["p_NP"] > uniform[0]["p_NP"]
+
+
+def test_average_predictions_rejects_bad_weight_count(tmp_path):
+    a = tmp_path / "a.csv"
+    b = tmp_path / "b.csv"
+    _write_pred_csv(a, [(7, 0, 0.5, 0.3, 0.2)])
+    _write_pred_csv(b, [(7, 0, 0.4, 0.4, 0.2)])
+    with pytest.raises(ValueError):
+        ens.average_predictions([a, b], weights=[1, 1, 1])  # 3 for 2 comps
+
+
+def test_run_ensemble_honors_spec_weights(tmp_path):
+    c1 = tmp_path / "submission_01"
+    c2 = tmp_path / "submission_02"
+    _write_pred_csv(c1 / "test_predictions.csv", [(7, 0, 0.9, 0.05, 0.05)])
+    _write_pred_csv(c2 / "test_predictions.csv", [(7, 0, 0.05, 0.05, 0.9)])
+    run_dir = tmp_path / "submission_05"
+    run_dir.mkdir()
+    (run_dir / "spec.json").write_text(json.dumps({
+        "name": "ens", "model": {"family": "prediction_ensemble",
+                                   "components": [str(c1), str(c2)],
+                                   "weights": [3, 1]}}))
+    result = ens.run_ensemble(run_dir)
+    assert result["weights"] == [3, 1]
+    rows = list(csv.DictReader(open(run_dir / "test_predictions.csv")))
+    assert rows[0]["pred_name"] == "NP"  # weight pulls toward c1
+
+
 def test_run_ensemble_missing_component_raises(tmp_path):
     run_dir = tmp_path / "submission_05"
     run_dir.mkdir()

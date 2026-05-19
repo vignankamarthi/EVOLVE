@@ -38,12 +38,17 @@ def _read_predictions(csv_path: Path) -> dict[int, dict]:
     return out
 
 
-def average_predictions(component_csvs: list[Path]) -> list[dict]:
-    """Soft-vote: average per-trial class probabilities across components,
-    argmax. All components must cover the same trial indices.
+def average_predictions(component_csvs: list[Path],
+                        weights: list[float] | None = None) -> list[dict]:
+    """Weighted soft-vote: average per-trial class probabilities across
+    components, argmax. All components must cover the same trial indices.
+
+    `weights` -- per-component vote weights (any positive scale; normalized
+    internally). None -> uniform. A heavier weight on a class-balanced
+    component protects the classes the others starve (the AP-collapse fix).
 
     Returns a list of per-trial dicts: subject, trial_index, pred_label,
-    pred_name, p_NP, p_AP, p_HP (the averaged probabilities).
+    pred_name, p_NP, p_AP, p_HP (the weighted-averaged probabilities).
     """
     if not component_csvs:
         raise ValueError("no component csvs given")
@@ -53,13 +58,23 @@ def average_predictions(component_csvs: list[Path]) -> list[dict]:
         if sorted(c.keys()) != trial_ids:
             raise ValueError("component predictions cover different trials")
 
-    rows = []
     n = len(comps)
+    if weights is None:
+        weights = [1.0] * n
+    if len(weights) != n:
+        raise ValueError(
+            f"got {len(weights)} weights for {n} components")
+    total = float(sum(weights))
+    if total <= 0:
+        raise ValueError("weights must sum to a positive value")
+    w = [x / total for x in weights]  # normalize to sum 1
+
+    rows = []
     for ti in trial_ids:
         avg = [0.0, 0.0, 0.0]
-        for c in comps:
+        for c, wc in zip(comps, w):
             for k in range(3):
-                avg[k] += c[ti]["p"][k] / n
+                avg[k] += c[ti]["p"][k] * wc
         pred = max(range(3), key=lambda k: avg[k])
         rows.append({
             "subject": comps[0][ti]["subject"],
@@ -80,6 +95,7 @@ def run_ensemble(run_dir: Path, data_root: Path | None = None) -> dict:
     components = spec.get("model", {}).get("components", [])
     if not components:
         raise ValueError("spec.model.components is empty")
+    weights = spec.get("model", {}).get("weights")  # None -> uniform
 
     csvs = [Path(c) / "test_predictions.csv" for c in components]
     missing = [str(p) for p in csvs if not p.exists()]
@@ -88,7 +104,7 @@ def run_ensemble(run_dir: Path, data_root: Path | None = None) -> dict:
             f"component predictions not found: {missing}. "
             f"Run submissions 1-4 first.")
 
-    rows = average_predictions(csvs)
+    rows = average_predictions(csvs, weights=weights)
     pred_path = run_dir / "test_predictions.csv"
     with open(pred_path, "w", newline="") as f:
         w = csv.writer(f)
@@ -106,6 +122,7 @@ def run_ensemble(run_dir: Path, data_root: Path | None = None) -> dict:
         "submission": True,
         "ensemble": True,
         "components": components,
+        "weights": weights,
         "test_n_trials": len(rows),
         "test_pred_class_counts": counts,
         "test_predictions_csv": str(pred_path),

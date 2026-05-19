@@ -11,10 +11,11 @@
       "experiments/submission_03",
       "experiments/submission_04"
     ],
+    "weights": [3, 1, 1, 1],
     "family": "prediction_ensemble"
   },
   "name": "submission_05_prediction_ensemble",
   "preprocessing": {},
-  "reasoning_summary": "HIP-G submission #5. Prediction ensemble: averages the per-trial class probabilities of submissions #1-#4 (independently trained), argmax. Variance reduction across decorrelated models.",
+  "reasoning_summary": "HIP-G submission #5. WEIGHTED prediction ensemble. weights [3,1,1,1] -> #1 (the class-balanced spectrogram champion) gets 0.5 of the vote, #2/#3/#4 each get ~0.167. The uniform 4-way average (run earlier) was AP-starved: #2/#3/#4 all collapse Arm Pain and 3-to-1 outvoted #1. Weighting #1 up protects AP while still letting #2-#4 (which are stronger on NP/HP) contribute. weights are normalized internally.",
   "training": {}
 }
