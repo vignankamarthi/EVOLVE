@@ -15,6 +15,8 @@ CSV layout (per file):
 
 ANTIPATTERNS rule 5: test labels are blind. load_split returns y=None for test.
 """
+from __future__ import annotations  # PEP 604 (int | None) safe on Python 3.9
+
 from pathlib import Path
 import csv
 import numpy as np
