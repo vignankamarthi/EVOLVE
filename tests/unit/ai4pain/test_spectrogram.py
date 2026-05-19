@@ -136,3 +136,60 @@ def test_spectrogram_residual_default_off():
     unaffected."""
     model = spec_mod.SpectrogramCNN2D(in_channels=4, F=33)
     assert model.use_residual is False
+
+
+# ---------- CWT (Morlet) transform (iter_0020 Hail-Mary) ----------
+
+def test_morlet_cwt_1d_shape_and_finite():
+    """_morlet_cwt_1d returns (n_freqs, T) magnitude, all finite."""
+    fs = 100
+    t = np.arange(1000) / fs
+    sig = np.sin(2 * np.pi * 1.0 * t) + 0.3 * np.sin(2 * np.pi * 5.0 * t)
+    freqs = np.logspace(np.log10(0.1), np.log10(20), 32)
+    cwt = spec_mod._morlet_cwt_1d(sig.astype(np.float32), fs=fs, freqs=freqs)
+    assert cwt.shape == (32, 1000)
+    assert np.isfinite(cwt).all()
+    assert (cwt >= 0).all()  # magnitude
+
+
+def test_morlet_cwt_locates_dominant_frequency():
+    """A pure 2 Hz tone should peak the CWT magnitude near the 2 Hz scale."""
+    fs = 100
+    t = np.arange(2000) / fs
+    sig = np.sin(2 * np.pi * 2.0 * t).astype(np.float32)
+    freqs = np.logspace(np.log10(0.5), np.log10(10), 40)
+    cwt = spec_mod._morlet_cwt_1d(sig, fs=fs, freqs=freqs)
+    # mean power per frequency; the argmax frequency should be near 2 Hz
+    peak_freq = freqs[cwt.mean(axis=1).argmax()]
+    assert 1.4 < peak_freq < 2.8, f"peak at {peak_freq:.2f} Hz, expected ~2"
+
+
+def test_compute_stack_cwt_shape():
+    """transform='cwt' -> (C, cwt_n_scales, T') stack consumable by the CNN."""
+    trial = np.random.default_rng(0).standard_normal((1000, 4)).astype(np.float32)
+    out = spec_mod.compute_spectrogram_stack(
+        trial, fs=100, transform="cwt", cwt_n_scales=40, cwt_time_decim=24)
+    assert out.shape[0] == 4
+    assert out.shape[1] == 40           # n_scales is the F axis
+    assert out.shape[2] == -(-1000 // 24)  # ceil(1000/24) decimated time bins
+    assert out.dtype == np.float32
+    assert np.isfinite(out).all()
+
+
+def test_compute_stack_rejects_unknown_transform():
+    trial = np.random.default_rng(0).standard_normal((500, 4)).astype(np.float32)
+    with pytest.raises(ValueError):
+        spec_mod.compute_spectrogram_stack(trial, fs=100, transform="fourier")
+
+
+def test_cwt_stack_feeds_spectrogram_cnn():
+    """A CWT stack must drop into SpectrogramCNN2D unchanged (same contract
+    as the STFT stack)."""
+    trial = np.random.default_rng(1).standard_normal((900, 4)).astype(np.float32)
+    cwt = spec_mod.compute_spectrogram_stack(
+        trial, fs=100, transform="cwt", cwt_n_scales=32, cwt_time_decim=24)
+    model = spec_mod.SpectrogramCNN2D(in_channels=4, F=cwt.shape[1],
+                                       base_channels=8, depth=2, num_classes=3)
+    x = torch.from_numpy(cwt).unsqueeze(0)  # (1, C, F, T')
+    out = model(x)
+    assert out.shape == (1, 3)

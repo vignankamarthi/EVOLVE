@@ -32,17 +32,49 @@ from ai4pain.metrics import full_metric_suite
 from sklearn.metrics import balanced_accuracy_score
 
 
+def _morlet_cwt_1d(sig: np.ndarray, fs: float, freqs: np.ndarray,
+                   w0: float = 6.0) -> np.ndarray:
+    """FFT-based Morlet continuous wavelet transform of a 1D signal.
+
+    Dependency-free (no pywt). Returns the CWT magnitude, shape (n_freqs, T).
+    For each analysis frequency f the Morlet wavelet has scale s = w0/(2*pi*f);
+    convolution is done in the frequency domain. Unlike STFT's fixed window,
+    CWT gives fine frequency resolution at low frequencies -- which is where
+    physiological signals (HRV, EDA, respiration) live.
+    """
+    sig = np.asarray(sig, dtype=np.float64).ravel()
+    n = sig.size
+    sig = sig - sig.mean()
+    sig_f = np.fft.fft(sig)
+    omega = 2.0 * np.pi * np.fft.fftfreq(n, d=1.0 / fs)  # angular freq grid
+    cwt = np.empty((len(freqs), n), dtype=np.float64)
+    for i, f in enumerate(freqs):
+        s = w0 / (2.0 * np.pi * f)  # wavelet scale (seconds)
+        sw = s * omega
+        # Morlet wavelet Fourier transform (analytic: positive freqs only).
+        psi_f = (np.pi ** -0.25) * np.exp(-0.5 * (sw - w0) ** 2) * (omega > 0)
+        cwt[i] = np.abs(np.fft.ifft(sig_f * psi_f))
+    return cwt
+
+
 def compute_spectrogram_stack(trial: np.ndarray, fs: int = 100,
                                 nperseg: int = 64, noverlap: int = 32,
-                                log_scale: bool = True) -> np.ndarray:
-    """Compute per-channel STFT spectrograms and stack to (C, F, T').
+                                log_scale: bool = True,
+                                transform: str = "stft",
+                                cwt_n_scales: int = 48,
+                                cwt_time_decim: int = 24,
+                                cwt_w0: float = 6.0) -> np.ndarray:
+    """Compute per-channel time-frequency stacks and stack to (C, F, T').
 
     Args:
         trial: (T, C) float array.
         fs: sampling rate (Hz).
-        nperseg: STFT window length.
-        noverlap: STFT overlap (samples).
-        log_scale: if True, return log(eps + Sxx).
+        transform: "stft" (default, scipy STFT) or "cwt" (Morlet wavelet).
+        nperseg, noverlap, log_scale: STFT params.
+        cwt_n_scales: number of CWT analysis frequencies (the F axis for CWT).
+        cwt_time_decim: CWT time-axis decimation (CWT keeps full time
+            resolution; decimating keeps the stack a manageable size).
+        cwt_w0: Morlet central frequency parameter.
 
     Returns:
         float32 ndarray of shape (C, F, T').
@@ -51,6 +83,25 @@ def compute_spectrogram_stack(trial: np.ndarray, fs: int = 100,
     if trial.ndim != 2:
         raise ValueError(f"expected (T, C) trial, got shape {trial.shape}")
     T, C = trial.shape
+
+    if transform == "cwt":
+        # Log-spaced analysis frequencies across the physiological band.
+        hi = min(20.0, 0.45 * fs)
+        freqs = np.logspace(np.log10(0.05), np.log10(hi), cwt_n_scales)
+        decim = max(1, int(cwt_time_decim))
+        per_channel = []
+        for c in range(C):
+            cwt = _morlet_cwt_1d(trial[:, c], fs=fs, freqs=freqs, w0=cwt_w0)
+            cwt = cwt[:, ::decim]  # decimate the time axis
+            if log_scale:
+                cwt = np.log1p(cwt)
+            per_channel.append(cwt.astype(np.float32))
+        return np.stack(per_channel, axis=0)
+
+    if transform != "stft":
+        raise ValueError(f"unknown transform {transform!r}; "
+                         f"expected 'stft' or 'cwt'")
+
     nperseg = min(nperseg, T)
     if nperseg < 2:
         nperseg = 2
@@ -172,6 +223,10 @@ def train_spectrogram(spec: dict, data_root: Path, out_dir: Path) -> dict:
     nperseg = int(fe.get("nperseg", 64))
     noverlap = int(fe.get("noverlap", 32))
     log_scale = bool(fe.get("log_scale", True))
+    transform = fe.get("transform", "stft")
+    cwt_n_scales = int(fe.get("cwt_n_scales", 48))
+    cwt_time_decim = int(fe.get("cwt_time_decim", 24))
+    cwt_w0 = float(fe.get("cwt_w0", 6.0))
 
     print(f"[spec_cnn2d] loading train from {data_root}", flush=True)
     X_train, y_train, _ = load_split(data_root, "train", signals=signals)
@@ -179,14 +234,13 @@ def train_spectrogram(spec: dict, data_root: Path, out_dir: Path) -> dict:
     print(f"[spec_cnn2d] {len(X_train)} train / {len(X_val)} val trials",
           flush=True)
 
-    print(f"[spec_cnn2d] STFT (nperseg={nperseg}, noverlap={noverlap}, "
-          f"log_scale={log_scale})...", flush=True)
-    Str = [compute_spectrogram_stack(x, fs=fs, nperseg=nperseg,
-                                       noverlap=noverlap, log_scale=log_scale)
-           for x in X_train]
-    Sv = [compute_spectrogram_stack(x, fs=fs, nperseg=nperseg,
-                                       noverlap=noverlap, log_scale=log_scale)
-          for x in X_val]
+    _tf = dict(fs=fs, nperseg=nperseg, noverlap=noverlap, log_scale=log_scale,
+               transform=transform, cwt_n_scales=cwt_n_scales,
+               cwt_time_decim=cwt_time_decim, cwt_w0=cwt_w0)
+    print(f"[spec_cnn2d] transform={transform} "
+          f"(nperseg={nperseg} | cwt_scales={cwt_n_scales})...", flush=True)
+    Str = [compute_spectrogram_stack(x, **_tf) for x in X_train]
+    Sv = [compute_spectrogram_stack(x, **_tf) for x in X_val]
     Str_p = pad_spectrograms_to_max(Str)
     Sv_p = pad_spectrograms_to_max(Sv)
     # Align time dims (use larger of the two)

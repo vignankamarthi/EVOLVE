@@ -79,11 +79,9 @@ class DualEnsembleNet(nn.Module):
         return w * cnn_logits + (1.0 - w) * gru_logits
 
 
-def _build_spectrograms(X: list[np.ndarray], fs: int, nperseg: int,
-                         noverlap: int, log_scale: bool) -> list[np.ndarray]:
-    return [compute_spectrogram_stack(x, fs=fs, nperseg=nperseg,
-                                       noverlap=noverlap, log_scale=log_scale)
-            for x in X]
+def _build_spectrograms(X: list[np.ndarray], tf_kwargs: dict
+                         ) -> list[np.ndarray]:
+    return [compute_spectrogram_stack(x, **tf_kwargs) for x in X]
 
 
 def train_dual_ensemble(spec: dict, data_root: Path, out_dir: Path) -> dict:
@@ -100,9 +98,16 @@ def train_dual_ensemble(spec: dict, data_root: Path, out_dir: Path) -> dict:
         "signals", ["Bvp", "Eda", "Resp", "SpO2"]))
     fe = spec.get("feature_extraction", {}) or {}
     fs = int(fe.get("fs", 100))
-    nperseg = int(fe.get("nperseg", 64))
-    noverlap = int(fe.get("noverlap", 32))
-    log_scale = bool(fe.get("log_scale", True))
+    tf_kwargs = dict(
+        fs=fs,
+        nperseg=int(fe.get("nperseg", 64)),
+        noverlap=int(fe.get("noverlap", 32)),
+        log_scale=bool(fe.get("log_scale", True)),
+        transform=fe.get("transform", "stft"),
+        cwt_n_scales=int(fe.get("cwt_n_scales", 48)),
+        cwt_time_decim=int(fe.get("cwt_time_decim", 24)),
+        cwt_w0=float(fe.get("cwt_w0", 6.0)),
+    )
 
     print(f"[dual_ensemble] loading train from {data_root}", flush=True)
     X_train, y_train, _ = load_split(data_root, "train", signals=signals)
@@ -125,12 +130,9 @@ def train_dual_ensemble(spec: dict, data_root: Path, out_dir: Path) -> dict:
     Xtr, Xv, _, _ = per_channel_zscore(Xtr, Xv)
 
     # --- spectrogram representation (CNN input) ---
-    print(f"[dual_ensemble] STFT (nperseg={nperseg}, noverlap={noverlap})...",
-          flush=True)
-    Str = pad_spectrograms_to_max(
-        _build_spectrograms(X_train, fs, nperseg, noverlap, log_scale))
-    Sv = pad_spectrograms_to_max(
-        _build_spectrograms(X_val, fs, nperseg, noverlap, log_scale))
+    print(f"[dual_ensemble] transform={tf_kwargs['transform']} ...", flush=True)
+    Str = pad_spectrograms_to_max(_build_spectrograms(X_train, tf_kwargs))
+    Sv = pad_spectrograms_to_max(_build_spectrograms(X_val, tf_kwargs))
     St_max = max(Str.shape[-1], Sv.shape[-1])
     if Str.shape[-1] < St_max:
         Str = np.concatenate([Str, np.zeros(
