@@ -19,9 +19,16 @@ import csv
 import json
 from pathlib import Path
 
-from ai4pain.baselines import _atomic_write_json
-
 LABEL_NAMES = ["NP", "AP", "HP"]
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """Write JSON atomically (tmp file + rename). Inlined so this module has
+    NO torch dependency -- the ensemble is pure CSV arithmetic and must run
+    instantly on a login node, not queue for a GPU."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(path)
 
 
 def _read_predictions(csv_path: Path) -> dict[int, dict]:
