@@ -1,0 +1,159 @@
+{
+  "name": "iter_0020_c02_cwt_64scales",
+  "best_val_metrics": {
+    "balanced_acc": 0.5162037037037037,
+    "macro_f1": 0.4740624685929507,
+    "auc_ovr": 0.7152027606310014,
+    "ece": 0.0757904710639038,
+    "per_class_pr": {
+      "NP": [
+        0.5860696520215226,
+        0.7824074074074074
+      ],
+      "AP": [
+        0.30308958995679464,
+        0.2708333333333333
+      ],
+      "HP": [
+        0.46757569510570973,
+        0.4953703703703704
+      ]
+    },
+    "confusion_3x3": [
+      [
+        338,
+        36,
+        58
+      ],
+      [
+        125,
+        117,
+        190
+      ],
+      [
+        114,
+        104,
+        214
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7528935185185186,
+      "f1": 0.7895557183105323,
+      "pain_precision": 0.8694515154600685,
+      "pain_recall": 0.7233796296296297,
+      "auc": 0.8300459747942387,
+      "confusion_2x2": [
+        [
+          338,
+          94
+        ],
+        [
+          239,
+          625
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5162037037037037,
+    "macro_f1": 0.4740624685929507,
+    "auc_ovr": 0.7152027606310014,
+    "ece": 0.0757904710639038,
+    "per_class_pr": {
+      "NP": [
+        0.5860696520215226,
+        0.7824074074074074
+      ],
+      "AP": [
+        0.30308958995679464,
+        0.2708333333333333
+      ],
+      "HP": [
+        0.46757569510570973,
+        0.4953703703703704
+      ]
+    },
+    "confusion_3x3": [
+      [
+        338,
+        36,
+        58
+      ],
+      [
+        125,
+        117,
+        190
+      ],
+      [
+        114,
+        104,
+        214
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7528935185185186,
+      "f1": 0.7895557183105323,
+      "pain_precision": 0.8694515154600685,
+      "pain_recall": 0.7233796296296297,
+      "auc": 0.8300459747942387,
+      "confusion_2x2": [
+        [
+          338,
+          94
+        ],
+        [
+          239,
+          625
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5115740740740741,
+    0.5277777777777778,
+    0.5092592592592592
+  ],
+  "balanced_acc_std": 0.008238486305579742,
+  "train_seconds": 25.965470790863037,
+  "inference_seconds": 0.0004093647003173828,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "cwt_n_scales": 64,
+      "family": "spectrogram",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "cwt"
+    },
+    "model": {
+      "base_channels": 24,
+      "depth": 3,
+      "dropout": 0.25,
+      "family": "spectrogram_cnn2d",
+      "use_residual": false
+    },
+    "name": "iter_0020_c02_cwt_64scales",
+    "preprocessing": {
+      "normalize": "per_channel_zscore"
+    },
+    "reasoning_summary": "iter_0020 c02. CWT with 64 frequency scales (finer freq axis). Structural sibling.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 90,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20020
+    }
+  }
+}

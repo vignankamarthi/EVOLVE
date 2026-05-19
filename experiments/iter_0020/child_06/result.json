@@ -1,0 +1,153 @@
+{
+  "name": "iter_0020_c06_gru_champion",
+  "best_val_metrics": {
+    "balanced_acc": 0.5277777777777778,
+    "macro_f1": 0.5249837396368428,
+    "auc_ovr": 0.7230340149176954,
+    "ece": 0.06941522469307171,
+    "per_class_pr": {
+      "NP": [
+        0.7278806272895159,
+        0.6990740740740741
+      ],
+      "AP": [
+        0.43659554476764667,
+        0.4305555555555555
+      ],
+      "HP": [
+        0.43161287673482795,
+        0.4537037037037037
+      ]
+    },
+    "confusion_3x3": [
+      [
+        302,
+        57,
+        73
+      ],
+      [
+        62,
+        186,
+        184
+      ],
+      [
+        51,
+        185,
+        196
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7841435185185185,
+      "f1": 0.8607475398772632,
+      "pain_precision": 0.8525589025875489,
+      "pain_recall": 0.8692129629629629,
+      "auc": 0.8365805041152262,
+      "confusion_2x2": [
+        [
+          302,
+          130
+        ],
+        [
+          113,
+          751
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5277777777777778,
+    "macro_f1": 0.5249837396368428,
+    "auc_ovr": 0.7230340149176954,
+    "ece": 0.06941522469307171,
+    "per_class_pr": {
+      "NP": [
+        0.7278806272895159,
+        0.6990740740740741
+      ],
+      "AP": [
+        0.43659554476764667,
+        0.4305555555555555
+      ],
+      "HP": [
+        0.43161287673482795,
+        0.4537037037037037
+      ]
+    },
+    "confusion_3x3": [
+      [
+        302,
+        57,
+        73
+      ],
+      [
+        62,
+        186,
+        184
+      ],
+      [
+        51,
+        185,
+        196
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7841435185185185,
+      "f1": 0.8607475398772632,
+      "pain_precision": 0.8525589025875489,
+      "pain_recall": 0.8692129629629629,
+      "auc": 0.8365805041152262,
+      "confusion_2x2": [
+        [
+          302,
+          130
+        ],
+        [
+          113,
+          751
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5231481481481483,
+    0.5254629629629629,
+    0.5347222222222222
+  ],
+  "balanced_acc_std": 0.005000571526549246,
+  "train_seconds": 844.607381105423,
+  "inference_seconds": 0.003625790278116862,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "encoder_type": "gru",
+      "family": "multi_stream_bigru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.2,
+      "per_channel_hidden": 40,
+      "per_channel_layers": 2
+    },
+    "name": "iter_0020_c06_gru_champion",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0020 c06. GRU champion control / 1D island anchor.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 150,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20060
+    }
+  }
+}

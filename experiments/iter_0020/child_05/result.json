@@ -1,0 +1,168 @@
+{
+  "name": "iter_0020_c05_dual_stft_control",
+  "best_val_metrics": {
+    "balanced_acc": 0.5401234567901234,
+    "macro_f1": 0.5236178553417683,
+    "auc_ovr": 0.7181498628257886,
+    "ece": 0.11500182258034193,
+    "per_class_pr": {
+      "NP": [
+        0.6220763528910926,
+        0.773148148148148
+      ],
+      "AP": [
+        0.48083385267356354,
+        0.3148148148148148
+      ],
+      "HP": [
+        0.49412420102686233,
+        0.5324074074074074
+      ]
+    },
+    "confusion_3x3": [
+      [
+        334,
+        40,
+        58
+      ],
+      [
+        115,
+        136,
+        181
+      ],
+      [
+        94,
+        108,
+        230
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.765625,
+      "f1": 0.8085176140731697,
+      "pain_precision": 0.8712861085641781,
+      "pain_recall": 0.7581018518518517,
+      "auc": 0.8338477366255144,
+      "confusion_2x2": [
+        [
+          334,
+          98
+        ],
+        [
+          209,
+          655
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5401234567901234,
+    "macro_f1": 0.5236178553417683,
+    "auc_ovr": 0.7181498628257886,
+    "ece": 0.11500182258034193,
+    "per_class_pr": {
+      "NP": [
+        0.6220763528910926,
+        0.773148148148148
+      ],
+      "AP": [
+        0.48083385267356354,
+        0.3148148148148148
+      ],
+      "HP": [
+        0.49412420102686233,
+        0.5324074074074074
+      ]
+    },
+    "confusion_3x3": [
+      [
+        334,
+        40,
+        58
+      ],
+      [
+        115,
+        136,
+        181
+      ],
+      [
+        94,
+        108,
+        230
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.765625,
+      "f1": 0.8085176140731697,
+      "pain_precision": 0.8712861085641781,
+      "pain_recall": 0.7581018518518517,
+      "auc": 0.8338477366255144,
+      "confusion_2x2": [
+        [
+          334,
+          98
+        ],
+        [
+          209,
+          655
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5277777777777777,
+    0.5532407407407407,
+    0.5393518518518519
+  ],
+  "balanced_acc_std": 0.010409519724716102,
+  "train_seconds": 694.7600421905518,
+  "inference_seconds": 0.004194815953572591,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "stft"
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 3,
+        "dropout": 0.25,
+        "use_residual": false
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0020_c05_dual_stft_control",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0020 c05. dual_ensemble STFT baseline -- in-batch CONTROL so the CWT-vs-STFT comparison is free of batch-to-batch noise. Structural sibling (transform=stft).",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20050
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "name": "submission_01_spectrogram_champion",
+  "submission": true,
+  "best_val_metrics": {
+    "balanced_acc": 0.5439814814814815,
+    "macro_f1": 0.5402139864317067,
+    "per_class_pr": {
+      "NP": [
+        0.6303030303030303,
+        0.7222222222222222
+      ],
+      "AP": [
+        0.436241610738255,
+        0.4513888888888889
+      ],
+      "HP": [
+        0.559322033898305,
+        0.4583333333333333
+      ]
+    },
+    "confusion_3x3": [
+      [
+        104,
+        30,
+        10
+      ],
+      [
+        37,
+        65,
+        42
+      ],
+      [
+        24,
+        54,
+        66
+      ]
+    ],
+    "auc_ovr": 0.7202771347736626,
+    "ece": 0.17046721479683014,
+    "binary": {
+      "balanced_acc": 0.7552083333333333,
+      "f1": 0.818018018018018,
+      "pain_precision": 0.850187265917603,
+      "pain_recall": 0.7881944444444444,
+      "auc": 0.8426649305555556,
+      "confusion_2x2": [
+        [
+          104,
+          40
+        ],
+        [
+          61,
+          227
+        ]
+      ]
+    }
+  },
+  "test_n_trials": 432,
+  "test_pred_class_counts": {
+    "NP": 148,
+    "AP": 140,
+    "HP": 144
+  },
+  "test_predictions_csv": "experiments/submission_01/test_predictions.csv",
+  "train_seconds": 8.352418899536133,
+  "device": "cuda",
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "spectrogram",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "stft"
+    },
+    "model": {
+      "base_channels": 24,
+      "depth": 3,
+      "dropout": 0.25,
+      "family": "spectrogram_cnn2d",
+      "use_residual": false
+    },
+    "name": "submission_01_spectrogram_champion",
+    "preprocessing": {
+      "normalize": "per_channel_zscore"
+    },
+    "reasoning_summary": "HIP-G submission #1. Spectrogram champion config (r133/r163, n_seeds=5 confirmed 0.5310 +/- 0.003 -- lowest variance in the ~0.53 tie cluster). Trains on the 41 train subjects, early-stops on val, predicts the blinded 12-subject test split.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 90,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "optimizer": "adam",
+      "seed": 20001
+    }
+  }
+}

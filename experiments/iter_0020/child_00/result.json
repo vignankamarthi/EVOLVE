@@ -1,0 +1,159 @@
+{
+  "name": "iter_0020_c00_cwt_spectrogram",
+  "best_val_metrics": {
+    "balanced_acc": 0.5254629629629629,
+    "macro_f1": 0.4816652225169849,
+    "auc_ovr": 0.7098604681069959,
+    "ece": 0.08759745799097014,
+    "per_class_pr": {
+      "NP": [
+        0.5889140950294124,
+        0.7615740740740741
+      ],
+      "AP": [
+        0.521219715956558,
+        0.2662037037037037
+      ],
+      "HP": [
+        0.4903699141844009,
+        0.548611111111111
+      ]
+    },
+    "confusion_3x3": [
+      [
+        329,
+        36,
+        67
+      ],
+      [
+        130,
+        115,
+        187
+      ],
+      [
+        107,
+        88,
+        237
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7436342592592592,
+      "f1": 0.7848908249015222,
+      "pain_precision": 0.8629430754374695,
+      "pain_recall": 0.7256944444444443,
+      "auc": 0.8183915252057613,
+      "confusion_2x2": [
+        [
+          329,
+          103
+        ],
+        [
+          237,
+          627
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5254629629629629,
+    "macro_f1": 0.4816652225169849,
+    "auc_ovr": 0.7098604681069959,
+    "ece": 0.08759745799097014,
+    "per_class_pr": {
+      "NP": [
+        0.5889140950294124,
+        0.7615740740740741
+      ],
+      "AP": [
+        0.521219715956558,
+        0.2662037037037037
+      ],
+      "HP": [
+        0.4903699141844009,
+        0.548611111111111
+      ]
+    },
+    "confusion_3x3": [
+      [
+        329,
+        36,
+        67
+      ],
+      [
+        130,
+        115,
+        187
+      ],
+      [
+        107,
+        88,
+        237
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7436342592592592,
+      "f1": 0.7848908249015222,
+      "pain_precision": 0.8629430754374695,
+      "pain_recall": 0.7256944444444443,
+      "auc": 0.8183915252057613,
+      "confusion_2x2": [
+        [
+          329,
+          103
+        ],
+        [
+          237,
+          627
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5416666666666666,
+    0.5370370370370371,
+    0.4976851851851852
+  ],
+  "balanced_acc_std": 0.01973258001935868,
+  "train_seconds": 25.746594667434692,
+  "inference_seconds": 0.00042128562927246094,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "cwt_n_scales": 48,
+      "family": "spectrogram",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "cwt"
+    },
+    "model": {
+      "base_channels": 24,
+      "depth": 3,
+      "dropout": 0.25,
+      "family": "spectrogram_cnn2d",
+      "use_residual": false
+    },
+    "name": "iter_0020_c00_cwt_spectrogram",
+    "preprocessing": {
+      "normalize": "per_channel_zscore"
+    },
+    "reasoning_summary": "iter_0020 c00. HAIL-MARY: CWT (Morlet wavelet) instead of STFT. Adaptive freq resolution -- fine at low freq, where physiological signals live. 48 scales.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 90,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20000
+    }
+  }
+}

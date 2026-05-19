@@ -1,0 +1,169 @@
+{
+  "name": "iter_0020_c04_dual_cwt_residual",
+  "best_val_metrics": {
+    "balanced_acc": 0.5262345679012346,
+    "macro_f1": 0.49907365644815144,
+    "auc_ovr": 0.717999828532236,
+    "ece": 0.12005829746708456,
+    "per_class_pr": {
+      "NP": [
+        0.6292978001838762,
+        0.7384259259259259
+      ],
+      "AP": [
+        0.4530262572318647,
+        0.24074074074074073
+      ],
+      "HP": [
+        0.45564936418594953,
+        0.5995370370370371
+      ]
+    },
+    "confusion_3x3": [
+      [
+        319,
+        26,
+        87
+      ],
+      [
+        105,
+        104,
+        223
+      ],
+      [
+        86,
+        87,
+        259
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7586805555555557,
+      "f1": 0.8150371333649041,
+      "pain_precision": 0.8573223771721907,
+      "pain_recall": 0.7789351851851851,
+      "auc": 0.8409810635288067,
+      "confusion_2x2": [
+        [
+          319,
+          113
+        ],
+        [
+          191,
+          673
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5262345679012346,
+    "macro_f1": 0.49907365644815144,
+    "auc_ovr": 0.717999828532236,
+    "ece": 0.12005829746708456,
+    "per_class_pr": {
+      "NP": [
+        0.6292978001838762,
+        0.7384259259259259
+      ],
+      "AP": [
+        0.4530262572318647,
+        0.24074074074074073
+      ],
+      "HP": [
+        0.45564936418594953,
+        0.5995370370370371
+      ]
+    },
+    "confusion_3x3": [
+      [
+        319,
+        26,
+        87
+      ],
+      [
+        105,
+        104,
+        223
+      ],
+      [
+        86,
+        87,
+        259
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7586805555555557,
+      "f1": 0.8150371333649041,
+      "pain_precision": 0.8573223771721907,
+      "pain_recall": 0.7789351851851851,
+      "auc": 0.8409810635288067,
+      "confusion_2x2": [
+        [
+          319,
+          113
+        ],
+        [
+          191,
+          673
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5300925925925926,
+    0.5254629629629629,
+    0.5231481481481483
+  ],
+  "balanced_acc_std": 0.0028870813169551554,
+  "train_seconds": 697.513031244278,
+  "inference_seconds": 0.004072348276774089,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "cwt_n_scales": 48,
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "cwt"
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 4,
+        "dropout": 0.25,
+        "use_residual": true
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0020_c04_dual_cwt_residual",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0020 c04. dual_ensemble CWT + residual CNN half. Structural sibling.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20040
+    }
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "name": "iter_0020_c03_dual_cwt",
+  "best_val_metrics": {
+    "balanced_acc": 0.5223765432098766,
+    "macro_f1": 0.48615993772143534,
+    "auc_ovr": 0.722348143861454,
+    "ece": 0.06325775081360781,
+    "per_class_pr": {
+      "NP": [
+        0.5752269263897171,
+        0.8148148148148149
+      ],
+      "AP": [
+        0.4958626073380172,
+        0.3055555555555556
+      ],
+      "HP": [
+        0.48239066670439223,
+        0.44675925925925924
+      ]
+    },
+    "confusion_3x3": [
+      [
+        352,
+        34,
+        46
+      ],
+      [
+        140,
+        132,
+        160
+      ],
+      [
+        124,
+        115,
+        193
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7546296296296297,
+      "f1": 0.7758746549294074,
+      "pain_precision": 0.885124985124985,
+      "pain_recall": 0.6944444444444445,
+      "auc": 0.8362911522633745,
+      "confusion_2x2": [
+        [
+          352,
+          80
+        ],
+        [
+          264,
+          600
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5223765432098766,
+    "macro_f1": 0.48615993772143534,
+    "auc_ovr": 0.722348143861454,
+    "ece": 0.06325775081360781,
+    "per_class_pr": {
+      "NP": [
+        0.5752269263897171,
+        0.8148148148148149
+      ],
+      "AP": [
+        0.4958626073380172,
+        0.3055555555555556
+      ],
+      "HP": [
+        0.48239066670439223,
+        0.44675925925925924
+      ]
+    },
+    "confusion_3x3": [
+      [
+        352,
+        34,
+        46
+      ],
+      [
+        140,
+        132,
+        160
+      ],
+      [
+        124,
+        115,
+        193
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7546296296296297,
+      "f1": 0.7758746549294074,
+      "pain_precision": 0.885124985124985,
+      "pain_recall": 0.6944444444444445,
+      "auc": 0.8362911522633745,
+      "confusion_2x2": [
+        [
+          352,
+          80
+        ],
+        [
+          264,
+          600
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5300925925925926,
+    0.5231481481481483,
+    0.5138888888888888
+  ],
+  "balanced_acc_std": 0.0066375966566687055,
+  "train_seconds": 694.3526084423065,
+  "inference_seconds": 0.004021883010864258,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "cwt_n_scales": 48,
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128,
+      "transform": "cwt"
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 3,
+        "dropout": 0.25,
+        "use_residual": false
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0020_c03_dual_cwt",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0020 c03. dual_ensemble with a CWT CNN half. GRU + CWT-CNN ensemble.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 20030
+    }
+  }
+}
