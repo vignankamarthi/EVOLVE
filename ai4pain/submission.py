@@ -108,9 +108,42 @@ def _make_loss(train_cfg: dict, y_train: np.ndarray, device):
     return nn.CrossEntropyLoss(weight=cw)
 
 
+def _write_predictions_csv(path, subjects, preds, probas, true_labels=None):
+    """Write a per-trial predictions CSV.
+
+    Without `true_labels` -> blinded-test format (subject, trial_index,
+    pred_*, p_*). With `true_labels` (the validation split, labels known) ->
+    extra true_label/true_name columns, so the file is self-contained for
+    post-hoc ensemble scoring. trial_index is the row index.
+    """
+    path = Path(path)
+    has_true = true_labels is not None
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        head = ["subject", "trial_index"]
+        if has_true:
+            head += ["true_label", "true_name"]
+        head += ["pred_label", "pred_name", "p_NP", "p_AP", "p_HP"]
+        w.writerow(head)
+        for i in range(len(preds)):
+            row = [int(subjects[i]), i]
+            if has_true:
+                t = int(true_labels[i])
+                row += [t, LABEL_NAMES[t]]
+            p = int(preds[i])
+            row += [p, LABEL_NAMES[p], f"{probas[i, 0]:.4f}",
+                    f"{probas[i, 1]:.4f}", f"{probas[i, 2]:.4f}"]
+            w.writerow(row)
+
+
 def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
-                       test_inputs, subjects_test, train_cfg, run_dir, spec):
-    """Generic train (early-stop on val) + predict-test loop.
+                       subjects_val, test_inputs, subjects_test,
+                       train_cfg, run_dir, spec):
+    """Generic train (early-stop on val) + predict loop.
+
+    At the best-val epoch, runs inference on BOTH the val split (->
+    val_predictions.csv, with true labels, for post-hoc ensembling) and the
+    blinded test split (-> test_predictions.csv).
 
     *_inputs are lists of np.float32 arrays; the model is called as
     model(*tensors), so 1-input (spectrogram/multi_stream) and 2-input (dual)
@@ -168,18 +201,17 @@ def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
         te_logits = model(*te_t)
         te_proba = te_logits.softmax(1).cpu().numpy()
         te_pred = te_logits.argmax(1).cpu().numpy()
+        # val predictions at the best-val epoch -- for post-hoc ensembling
+        va_logits = model(*va_t)
+        va_proba = va_logits.softmax(1).cpu().numpy()
+        va_pred = va_logits.argmax(1).cpu().numpy()
 
     run_dir = Path(run_dir)
     pred_path = run_dir / "test_predictions.csv"
-    with open(pred_path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["subject", "trial_index", "pred_label", "pred_name",
-                    "p_NP", "p_AP", "p_HP"])
-        for i in range(len(te_pred)):
-            w.writerow([int(subjects_test[i]), i, int(te_pred[i]),
-                        LABEL_NAMES[int(te_pred[i])],
-                        f"{te_proba[i, 0]:.4f}", f"{te_proba[i, 1]:.4f}",
-                        f"{te_proba[i, 2]:.4f}"])
+    _write_predictions_csv(pred_path, subjects_test, te_pred, te_proba)
+    val_path = run_dir / "val_predictions.csv"
+    _write_predictions_csv(val_path, subjects_val, va_pred, va_proba,
+                           true_labels=y_val)
 
     result = {
         "name": spec.get("name", "submission"),
@@ -189,12 +221,15 @@ def _train_and_predict(model, train_inputs, y_train, val_inputs, y_val,
         "test_pred_class_counts": {LABEL_NAMES[c]: int((te_pred == c).sum())
                                     for c in range(3)},
         "test_predictions_csv": str(pred_path),
+        "val_predictions_csv": str(val_path),
         "train_seconds": time.time() - t0,
         "device": str(device),
         "spec": spec,
     }
     _atomic_write_json(run_dir / "result.json", result)
     print(f"[submission] best val bal_acc: {best_val:.4f}", flush=True)
+    print(f"[submission] val predictions -> {val_path} "
+          f"({len(va_pred)} trials)", flush=True)
     print(f"[submission] test predictions -> {pred_path} "
           f"({len(te_pred)} trials)", flush=True)
     print(f"[submission] test class counts: "
@@ -233,7 +268,8 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
     print(f"[submission] family={family}, loading splits from {data_root}",
           flush=True)
     X_train, y_train, _ = load_split(data_root, "train", signals=signals)
-    X_val, y_val, _ = load_split(data_root, "validation", signals=signals)
+    X_val, y_val, subj_val = load_split(data_root, "validation",
+                                        signals=signals)
     X_test, _, subj_test = load_split(data_root, "test", signals=signals)
     print(f"[submission] {len(X_train)} train / {len(X_val)} val / "
           f"{len(X_test)} test trials", flush=True)
@@ -249,7 +285,8 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
             use_residual=bool(mc.get("use_residual", False)),
             num_classes=3)
         return _train_and_predict(model, [Str], y_train, [Sv], y_val,
-                                   [Ste], subj_test, train_cfg, run_dir, spec)
+                                   subj_val, [Ste], subj_test, train_cfg,
+                                   run_dir, spec)
 
     if family == "multi_stream_bigru":
         Xtr, Xv, Xte = _prep_sequence(X_train, X_val, X_test)
@@ -257,7 +294,8 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
             in_channels=len(signals), T_max=Xtr.shape[1],
             model_cfg=mc, num_classes=3)
         return _train_and_predict(model, [Xtr], y_train, [Xv], y_val,
-                                   [Xte], subj_test, train_cfg, run_dir, spec)
+                                   subj_val, [Xte], subj_test, train_cfg,
+                                   run_dir, spec)
 
     # dual_ensemble
     Xtr, Xv, Xte = _prep_sequence(X_train, X_val, X_test)
@@ -267,7 +305,8 @@ def run_submission(run_dir: Path, data_root: Path) -> dict:
         in_channels=len(signals), spec_F=F, num_classes=3,
         gru_cfg=mc.get("gru_cfg", {}), cnn_cfg=mc.get("cnn_cfg", {}))
     return _train_and_predict(model, [Xtr, Str], y_train, [Xv, Sv], y_val,
-                               [Xte, Ste], subj_test, train_cfg, run_dir, spec)
+                               subj_val, [Xte, Ste], subj_test, train_cfg,
+                               run_dir, spec)
 
 
 def run_from_dir(run_dir: Path, data_root: Path) -> dict:

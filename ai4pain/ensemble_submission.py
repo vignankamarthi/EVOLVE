@@ -142,6 +142,82 @@ def run_ensemble(run_dir: Path, data_root: Path | None = None) -> dict:
     return result
 
 
+def _read_true_labels(csv_path: Path) -> dict[int, int]:
+    """Read {trial_index: true_label} from a val_predictions.csv."""
+    out: dict[int, int] = {}
+    with open(csv_path) as f:
+        for row in csv.DictReader(f):
+            out[int(row["trial_index"])] = int(row["true_label"])
+    return out
+
+
+def score_val_ensemble(val_csvs: list[Path],
+                       weights: list[float] | None = None) -> dict:
+    """Score the weighted ensemble on the VALIDATION split.
+
+    Each `val_predictions.csv` (from submission.py) carries per-trial class
+    probabilities AND the true label. This weighted-averages the component
+    probability tables, argmaxes, and scores against the true labels:
+
+    - acc_3class: NP/AP/HP accuracy (the official challenge metric).
+    - acc_binary: Pain-vs-No-Pain accuracy -- AP and HP both collapse to
+      "Pain", so a 3-class miss inside {AP, HP} still counts as a binary hit.
+
+    This is a label-backed val estimate; it costs no test submission.
+    """
+    rows = average_predictions([Path(c) for c in val_csvs], weights=weights)
+    truth = _read_true_labels(Path(val_csvs[0]))
+    n = len(rows)
+    if n == 0:
+        raise ValueError("no validation trials to score")
+    correct_3 = correct_bin = 0
+    for r in rows:
+        true = truth[r["trial_index"]]
+        pred = r["pred_label"]
+        if pred == true:
+            correct_3 += 1
+        if (pred != 0) == (true != 0):   # 0 = No Pain, {1,2} = Pain
+            correct_bin += 1
+    return {
+        "n": n,
+        "acc_3class": correct_3 / n,
+        "acc_binary": correct_bin / n,
+        "weights": list(weights) if weights is not None else None,
+    }
+
+
+def run_val_ensemble(run_dir: Path) -> dict:
+    """Read spec.json's component dirs, score the weighted ensemble on the
+    validation split using each component's val_predictions.csv, write
+    run_dir/val_ensemble_metrics.json. Pure CSV arithmetic -- no GPU."""
+    run_dir = Path(run_dir)
+    spec = json.loads((run_dir / "spec.json").read_text())
+    components = spec.get("model", {}).get("components", [])
+    if not components:
+        raise ValueError("spec.model.components is empty")
+    weights = spec.get("model", {}).get("weights")  # None -> uniform
+
+    val_csvs = [Path(c) / "val_predictions.csv" for c in components]
+    missing = [str(p) for p in val_csvs if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"component val predictions not found: {missing}. "
+            f"Re-run submissions 1-4 (the runner now dumps val_predictions.csv).")
+
+    metrics = score_val_ensemble(val_csvs, weights=weights)
+    result = {
+        "name": spec.get("name", "ensemble_submission"),
+        "val_ensemble": True,
+        "components": components,
+        **metrics,
+    }
+    _atomic_write_json(run_dir / "val_ensemble_metrics.json", result)
+    print(f"[ensemble-val] 3-class {metrics['acc_3class']:.4f}  "
+          f"binary {metrics['acc_binary']:.4f}  (n={metrics['n']})",
+          flush=True)
+    return metrics
+
+
 def run_from_dir(run_dir: Path, data_root: Path | None = None) -> dict:
     return run_ensemble(Path(run_dir), data_root)
 
@@ -150,5 +226,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-dir", required=True, type=Path)
     parser.add_argument("--data-root", type=Path, default=None)
+    parser.add_argument("--val", action="store_true",
+                        help="score the ensemble on the validation split "
+                             "(needs each component's val_predictions.csv)")
     args = parser.parse_args()
-    run_from_dir(args.run_dir, args.data_root)
+    if args.val:
+        run_val_ensemble(args.run_dir)
+    else:
+        run_from_dir(args.run_dir, args.data_root)

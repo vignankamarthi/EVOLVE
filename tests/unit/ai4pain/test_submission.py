@@ -59,6 +59,33 @@ def test_make_loss_returns_callable():
     assert torch.isfinite(out).all()
 
 
+def test_write_predictions_csv_test_format(tmp_path):
+    """Without true_labels -> blinded-test format (no true_* columns)."""
+    out = tmp_path / "test_predictions.csv"
+    probas = np.array([[0.7, 0.2, 0.1], [0.1, 0.2, 0.7]], dtype=np.float32)
+    submission._write_predictions_csv(
+        out, subjects=[3, 17], preds=np.array([0, 2]), probas=probas)
+    rows = list(csv.DictReader(open(out)))
+    assert list(rows[0].keys()) == ["subject", "trial_index", "pred_label",
+                                    "pred_name", "p_NP", "p_AP", "p_HP"]
+    assert rows[0]["pred_name"] == "NP" and rows[1]["pred_name"] == "HP"
+    assert rows[1]["trial_index"] == "1"
+
+
+def test_write_predictions_csv_val_format_has_true_labels(tmp_path):
+    """With true_labels (validation) -> true_label/true_name columns added."""
+    out = tmp_path / "val_predictions.csv"
+    probas = np.array([[0.7, 0.2, 0.1], [0.2, 0.6, 0.2]], dtype=np.float32)
+    submission._write_predictions_csv(
+        out, subjects=[3, 3], preds=np.array([0, 1]), probas=probas,
+        true_labels=np.array([0, 2]))
+    rows = list(csv.DictReader(open(out)))
+    assert "true_label" in rows[0] and "true_name" in rows[0]
+    assert rows[0]["true_label"] == "0" and rows[0]["true_name"] == "NP"
+    assert rows[1]["true_name"] == "HP"   # true label 2
+    assert rows[1]["pred_name"] == "AP"   # predicted label 1
+
+
 def test_run_submission_rejects_unsupported_family(tmp_path):
     spec = {"name": "x", "model": {"family": "transformer"},
             "training": {}, "feature_extraction": {}}
@@ -100,3 +127,11 @@ def test_smoke_run_submission_each_family(tmp_path, family, model_cfg, fe):
     assert len(rows) == result["test_n_trials"]
     for r in rows:
         assert int(r["pred_label"]) in (0, 1, 2)
+    # val predictions are also dumped (for post-hoc ensembling)
+    val_csv = tmp_path / "val_predictions.csv"
+    assert val_csv.exists()
+    vrows = list(csv.DictReader(open(val_csv)))
+    assert len(vrows) > 0
+    assert "true_label" in vrows[0]   # val labels are known
+    for r in vrows:
+        assert int(r["true_label"]) in (0, 1, 2)
