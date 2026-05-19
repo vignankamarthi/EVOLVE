@@ -1,0 +1,167 @@
+{
+  "name": "iter_0018_c02_dual_nperseg192",
+  "best_val_metrics": {
+    "balanced_acc": 0.5447530864197531,
+    "macro_f1": 0.5262945167568693,
+    "auc_ovr": 0.7300588348765431,
+    "ece": 0.08621186691761752,
+    "per_class_pr": {
+      "NP": [
+        0.6490206255189738,
+        0.7754629629629629
+      ],
+      "AP": [
+        0.46509555181758716,
+        0.33796296296296297
+      ],
+      "HP": [
+        0.4891122278056952,
+        0.5208333333333334
+      ]
+    },
+    "confusion_3x3": [
+      [
+        335,
+        50,
+        47
+      ],
+      [
+        95,
+        146,
+        191
+      ],
+      [
+        87,
+        120,
+        225
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7824074074074074,
+      "f1": 0.8300149333394723,
+      "pain_precision": 0.8756936556367144,
+      "pain_recall": 0.7893518518518517,
+      "auc": 0.8512329603909464,
+      "confusion_2x2": [
+        [
+          335,
+          97
+        ],
+        [
+          182,
+          682
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5447530864197531,
+    "macro_f1": 0.5262945167568693,
+    "auc_ovr": 0.7300588348765431,
+    "ece": 0.08621186691761752,
+    "per_class_pr": {
+      "NP": [
+        0.6490206255189738,
+        0.7754629629629629
+      ],
+      "AP": [
+        0.46509555181758716,
+        0.33796296296296297
+      ],
+      "HP": [
+        0.4891122278056952,
+        0.5208333333333334
+      ]
+    },
+    "confusion_3x3": [
+      [
+        335,
+        50,
+        47
+      ],
+      [
+        95,
+        146,
+        191
+      ],
+      [
+        87,
+        120,
+        225
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7824074074074074,
+      "f1": 0.8300149333394723,
+      "pain_precision": 0.8756936556367144,
+      "pain_recall": 0.7893518518518517,
+      "auc": 0.8512329603909464,
+      "confusion_2x2": [
+        [
+          335,
+          97
+        ],
+        [
+          182,
+          682
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5439814814814815,
+    0.5370370370370371,
+    0.5532407407407407
+  ],
+  "balanced_acc_std": 0.006637596656668654,
+  "train_seconds": 691.2070078849792,
+  "inference_seconds": 0.003963549931844075,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 96,
+      "nperseg": 192
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 3,
+        "dropout": 0.25,
+        "use_residual": false
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0018_c02_dual_nperseg192",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0018 c02. dual_ensemble with nperseg 192 (finer-frequency spectrogram half). Structural sibling.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18020
+    }
+  }
+}

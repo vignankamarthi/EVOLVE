@@ -1,0 +1,167 @@
+{
+  "name": "iter_0018_c00_dual_baseline",
+  "best_val_metrics": {
+    "balanced_acc": 0.5347222222222223,
+    "macro_f1": 0.525940157567686,
+    "auc_ovr": 0.7089562435699589,
+    "ece": 0.2449549860148518,
+    "per_class_pr": {
+      "NP": [
+        0.6618708115522787,
+        0.6736111111111112
+      ],
+      "AP": [
+        0.4503792213758619,
+        0.5162037037037037
+      ],
+      "HP": [
+        0.5088649965699146,
+        0.41435185185185186
+      ]
+    },
+    "confusion_3x3": [
+      [
+        291,
+        91,
+        50
+      ],
+      [
+        82,
+        223,
+        127
+      ],
+      [
+        69,
+        184,
+        179
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7494212962962963,
+      "f1": 0.8297237080315317,
+      "pain_precision": 0.8366705446030448,
+      "pain_recall": 0.8252314814814815,
+      "auc": 0.8371672453703702,
+      "confusion_2x2": [
+        [
+          291,
+          141
+        ],
+        [
+          151,
+          713
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5347222222222223,
+    "macro_f1": 0.525940157567686,
+    "auc_ovr": 0.7089562435699589,
+    "ece": 0.2449549860148518,
+    "per_class_pr": {
+      "NP": [
+        0.6618708115522787,
+        0.6736111111111112
+      ],
+      "AP": [
+        0.4503792213758619,
+        0.5162037037037037
+      ],
+      "HP": [
+        0.5088649965699146,
+        0.41435185185185186
+      ]
+    },
+    "confusion_3x3": [
+      [
+        291,
+        91,
+        50
+      ],
+      [
+        82,
+        223,
+        127
+      ],
+      [
+        69,
+        184,
+        179
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7494212962962963,
+      "f1": 0.8297237080315317,
+      "pain_precision": 0.8366705446030448,
+      "pain_recall": 0.8252314814814815,
+      "auc": 0.8371672453703702,
+      "confusion_2x2": [
+        [
+          291,
+          141
+        ],
+        [
+          151,
+          713
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.525462962962963,
+    0.5416666666666666,
+    0.5370370370370371
+  ],
+  "balanced_acc_std": 0.006814630298092442,
+  "train_seconds": 690.4372217655182,
+  "inference_seconds": 0.003962993621826172,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 3,
+        "dropout": 0.25,
+        "use_residual": false
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0018_c00_dual_baseline",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0018 c00. dual_ensemble: GRU co-champion (r130) + spectrogram co-champion (r133), learned per-class logit blend. The straight ensemble of the two plateaued architectures -- decorrelated errors should clear the 0.536 ceiling.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18000
+    }
+  }
+}

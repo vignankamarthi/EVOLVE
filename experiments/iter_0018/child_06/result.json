@@ -1,0 +1,153 @@
+{
+  "name": "iter_0018_c06_conv1d_encoder",
+  "best_val_metrics": {
+    "balanced_acc": 0.5038580246913581,
+    "macro_f1": 0.4928301643957121,
+    "auc_ovr": 0.6951169195816186,
+    "ece": 0.07832685032468518,
+    "per_class_pr": {
+      "NP": [
+        0.6992655875299759,
+        0.5972222222222222
+      ],
+      "AP": [
+        0.42796092796092794,
+        0.2569444444444444
+      ],
+      "HP": [
+        0.4289573807879126,
+        0.6574074074074074
+      ]
+    },
+    "confusion_3x3": [
+      [
+        258,
+        58,
+        116
+      ],
+      [
+        59,
+        111,
+        262
+      ],
+      [
+        57,
+        91,
+        284
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7314814814814815,
+      "f1": 0.8371783838651309,
+      "pain_precision": 0.8120936941329432,
+      "pain_recall": 0.8657407407407408,
+      "auc": 0.7926793981481483,
+      "confusion_2x2": [
+        [
+          258,
+          174
+        ],
+        [
+          116,
+          748
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5038580246913581,
+    "macro_f1": 0.4928301643957121,
+    "auc_ovr": 0.6951169195816186,
+    "ece": 0.07832685032468518,
+    "per_class_pr": {
+      "NP": [
+        0.6992655875299759,
+        0.5972222222222222
+      ],
+      "AP": [
+        0.42796092796092794,
+        0.2569444444444444
+      ],
+      "HP": [
+        0.4289573807879126,
+        0.6574074074074074
+      ]
+    },
+    "confusion_3x3": [
+      [
+        258,
+        58,
+        116
+      ],
+      [
+        59,
+        111,
+        262
+      ],
+      [
+        57,
+        91,
+        284
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7314814814814815,
+      "f1": 0.8371783838651309,
+      "pain_precision": 0.8120936941329432,
+      "pain_recall": 0.8657407407407408,
+      "auc": 0.7926793981481483,
+      "confusion_2x2": [
+        [
+          258,
+          174
+        ],
+        [
+          116,
+          748
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5115740740740741,
+    0.5069444444444445,
+    0.4930555555555555
+  ],
+  "balanced_acc_std": 0.007868857274062963,
+  "train_seconds": 73.28782439231873,
+  "inference_seconds": 0.0010899702707926433,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "encoder_type": "conv1d",
+      "family": "multi_stream_bigru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.2,
+      "per_channel_hidden": 40,
+      "per_channel_layers": 2
+    },
+    "name": "iter_0018_c06_conv1d_encoder",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0018 c06. multi_stream with conv1d per-channel encoder -- the one encoder_type never tried (iter_0015 did lstm/transformer, iter_0017 did bilstm). Structural sibling of c05.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18060
+    }
+  }
+}

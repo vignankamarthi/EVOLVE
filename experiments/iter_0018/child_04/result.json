@@ -1,0 +1,157 @@
+{
+  "name": "iter_0018_c04_spec_residual_wide",
+  "best_val_metrics": {
+    "balanced_acc": 0.5347222222222222,
+    "macro_f1": 0.53076672201697,
+    "auc_ovr": 0.7308183834876543,
+    "ece": 0.08214267692816109,
+    "per_class_pr": {
+      "NP": [
+        0.6702810117225925,
+        0.7129629629629629
+      ],
+      "AP": [
+        0.4317472708074179,
+        0.4768518518518518
+      ],
+      "HP": [
+        0.5052258305337812,
+        0.41435185185185186
+      ]
+    },
+    "confusion_3x3": [
+      [
+        308,
+        94,
+        30
+      ],
+      [
+        79,
+        206,
+        147
+      ],
+      [
+        77,
+        176,
+        179
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7662037037037037,
+      "f1": 0.8342958631261291,
+      "pain_precision": 0.852283489075942,
+      "pain_recall": 0.8194444444444445,
+      "auc": 0.8486127186213993,
+      "confusion_2x2": [
+        [
+          308,
+          124
+        ],
+        [
+          156,
+          708
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5347222222222222,
+    "macro_f1": 0.53076672201697,
+    "auc_ovr": 0.7308183834876543,
+    "ece": 0.08214267692816109,
+    "per_class_pr": {
+      "NP": [
+        0.6702810117225925,
+        0.7129629629629629
+      ],
+      "AP": [
+        0.4317472708074179,
+        0.4768518518518518
+      ],
+      "HP": [
+        0.5052258305337812,
+        0.41435185185185186
+      ]
+    },
+    "confusion_3x3": [
+      [
+        308,
+        94,
+        30
+      ],
+      [
+        79,
+        206,
+        147
+      ],
+      [
+        77,
+        176,
+        179
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7662037037037037,
+      "f1": 0.8342958631261291,
+      "pain_precision": 0.852283489075942,
+      "pain_recall": 0.8194444444444445,
+      "auc": 0.8486127186213993,
+      "confusion_2x2": [
+        [
+          308,
+          124
+        ],
+        [
+          156,
+          708
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5277777777777778,
+    0.5370370370370371,
+    0.5393518518518519
+  ],
+  "balanced_acc_std": 0.0050005715265492795,
+  "train_seconds": 43.20330047607422,
+  "inference_seconds": 0.0008413791656494141,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "spectrogram",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128
+    },
+    "model": {
+      "base_channels": 32,
+      "depth": 4,
+      "dropout": 0.25,
+      "family": "spectrogram_cnn2d",
+      "use_residual": true
+    },
+    "name": "iter_0018_c04_spec_residual_wide",
+    "preprocessing": {
+      "normalize": "per_channel_zscore"
+    },
+    "reasoning_summary": "iter_0018 c04. spectrogram_cnn2d residual, depth 4, base_channels 32. Structural sibling (residual + wider).",
+    "training": {
+      "batch_size": 32,
+      "epochs": 90,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18040
+    }
+  }
+}

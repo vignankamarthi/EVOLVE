@@ -1,0 +1,167 @@
+{
+  "name": "iter_0018_c01_dual_residual_cnn",
+  "best_val_metrics": {
+    "balanced_acc": 0.5316358024691358,
+    "macro_f1": 0.5261586714025476,
+    "auc_ovr": 0.7107660322359397,
+    "ece": 0.23190353824584573,
+    "per_class_pr": {
+      "NP": [
+        0.6465886597291511,
+        0.6944444444444445
+      ],
+      "AP": [
+        0.44398699294532623,
+        0.3888888888888889
+      ],
+      "HP": [
+        0.4899478657543173,
+        0.5115740740740741
+      ]
+    },
+    "confusion_3x3": [
+      [
+        300,
+        69,
+        63
+      ],
+      [
+        96,
+        168,
+        168
+      ],
+      [
+        72,
+        139,
+        221
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.75,
+      "f1": 0.8219614962340582,
+      "pain_precision": 0.842929256409762,
+      "pain_recall": 0.8055555555555555,
+      "auc": 0.8289448302469137,
+      "confusion_2x2": [
+        [
+          300,
+          132
+        ],
+        [
+          168,
+          696
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5316358024691358,
+    "macro_f1": 0.5261586714025476,
+    "auc_ovr": 0.7107660322359397,
+    "ece": 0.23190353824584573,
+    "per_class_pr": {
+      "NP": [
+        0.6465886597291511,
+        0.6944444444444445
+      ],
+      "AP": [
+        0.44398699294532623,
+        0.3888888888888889
+      ],
+      "HP": [
+        0.4899478657543173,
+        0.5115740740740741
+      ]
+    },
+    "confusion_3x3": [
+      [
+        300,
+        69,
+        63
+      ],
+      [
+        96,
+        168,
+        168
+      ],
+      [
+        72,
+        139,
+        221
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.75,
+      "f1": 0.8219614962340582,
+      "pain_precision": 0.842929256409762,
+      "pain_recall": 0.8055555555555555,
+      "auc": 0.8289448302469137,
+      "confusion_2x2": [
+        [
+          300,
+          132
+        ],
+        [
+          168,
+          696
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5416666666666666,
+    0.5300925925925927,
+    0.5231481481481483
+  ],
+  "balanced_acc_std": 0.00763849917948425,
+  "train_seconds": 696.154390335083,
+  "inference_seconds": 0.004299004872639974,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "dual_ensemble",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128
+    },
+    "model": {
+      "cnn_cfg": {
+        "base_channels": 24,
+        "depth": 4,
+        "dropout": 0.25,
+        "use_residual": true
+      },
+      "family": "dual_ensemble",
+      "gru_cfg": {
+        "encoder_type": "gru",
+        "fusion": "late_concat",
+        "fusion_dropout": 0.2,
+        "per_channel_hidden": 40,
+        "per_channel_layers": 2
+      }
+    },
+    "name": "iter_0018_c01_dual_residual_cnn",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0018 c01. dual_ensemble with a RESIDUAL CNN half (use_residual, depth 4). Structural sibling. Residual blocks counter the depth degradation seen in iter_0017.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 120,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18010
+    }
+  }
+}

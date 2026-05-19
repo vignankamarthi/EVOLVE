@@ -1,0 +1,157 @@
+{
+  "name": "iter_0018_c03_spec_residual_deep",
+  "best_val_metrics": {
+    "balanced_acc": 0.5270061728395062,
+    "macro_f1": 0.4701740165735917,
+    "auc_ovr": 0.7174666709533608,
+    "ece": 0.12196835477686958,
+    "per_class_pr": {
+      "NP": [
+        0.5996967030055265,
+        0.8009259259259259
+      ],
+      "AP": [
+        0.47607994842037393,
+        0.11111111111111112
+      ],
+      "HP": [
+        0.48251669702489375,
+        0.6689814814814815
+      ]
+    },
+    "confusion_3x3": [
+      [
+        346,
+        25,
+        61
+      ],
+      [
+        134,
+        48,
+        250
+      ],
+      [
+        103,
+        40,
+        289
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7633101851851851,
+      "f1": 0.7932327935633866,
+      "pain_precision": 0.8841126364565611,
+      "pain_recall": 0.7256944444444443,
+      "auc": 0.8361625514403292,
+      "confusion_2x2": [
+        [
+          346,
+          86
+        ],
+        [
+          237,
+          627
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.5270061728395062,
+    "macro_f1": 0.4701740165735917,
+    "auc_ovr": 0.7174666709533608,
+    "ece": 0.12196835477686958,
+    "per_class_pr": {
+      "NP": [
+        0.5996967030055265,
+        0.8009259259259259
+      ],
+      "AP": [
+        0.47607994842037393,
+        0.11111111111111112
+      ],
+      "HP": [
+        0.48251669702489375,
+        0.6689814814814815
+      ]
+    },
+    "confusion_3x3": [
+      [
+        346,
+        25,
+        61
+      ],
+      [
+        134,
+        48,
+        250
+      ],
+      [
+        103,
+        40,
+        289
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7633101851851851,
+      "f1": 0.7932327935633866,
+      "pain_precision": 0.8841126364565611,
+      "pain_recall": 0.7256944444444443,
+      "auc": 0.8361625514403292,
+      "confusion_2x2": [
+        [
+          346,
+          86
+        ],
+        [
+          237,
+          627
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5347222222222222,
+    0.5162037037037037,
+    0.5300925925925927
+  ],
+  "balanced_acc_std": 0.007868857274062939,
+  "train_seconds": 49.90131378173828,
+  "inference_seconds": 0.0009720325469970703,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": {
+      "family": "spectrogram",
+      "fs": 100,
+      "log_scale": true,
+      "noverlap": 64,
+      "nperseg": 128
+    },
+    "model": {
+      "base_channels": 24,
+      "depth": 5,
+      "dropout": 0.25,
+      "family": "spectrogram_cnn2d",
+      "use_residual": true
+    },
+    "name": "iter_0018_c03_spec_residual_deep",
+    "preprocessing": {
+      "normalize": "per_channel_zscore"
+    },
+    "reasoning_summary": "iter_0018 c03. spectrogram_cnn2d with RESIDUAL blocks at depth 5. iter_0017 depth-5 (plain) regressed to 0.519; residual skips should let depth help instead of hurt.",
+    "training": {
+      "batch_size": 32,
+      "epochs": 90,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18030
+    }
+  }
+}

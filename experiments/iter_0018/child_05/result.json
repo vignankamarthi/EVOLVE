@@ -1,0 +1,153 @@
+{
+  "name": "iter_0018_c05_gru_champion",
+  "best_val_metrics": {
+    "balanced_acc": 0.51929012345679,
+    "macro_f1": 0.48551608519379946,
+    "auc_ovr": 0.7122690543552813,
+    "ece": 0.09026766439646851,
+    "per_class_pr": {
+      "NP": [
+        0.6345169610543943,
+        0.726851851851852
+      ],
+      "AP": [
+        0.46046356018727735,
+        0.513888888888889
+      ],
+      "HP": [
+        0.4888888888888889,
+        0.3171296296296296
+      ]
+    },
+    "confusion_3x3": [
+      [
+        314,
+        68,
+        50
+      ],
+      [
+        88,
+        222,
+        122
+      ],
+      [
+        99,
+        196,
+        137
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7552083333333334,
+      "f1": 0.8153116920306708,
+      "pain_precision": 0.8571322905501965,
+      "pain_recall": 0.7835648148148148,
+      "auc": 0.8211484053497943,
+      "confusion_2x2": [
+        [
+          314,
+          118
+        ],
+        [
+          187,
+          677
+        ]
+      ]
+    }
+  },
+  "final_val_metrics": {
+    "balanced_acc": 0.51929012345679,
+    "macro_f1": 0.48551608519379946,
+    "auc_ovr": 0.7122690543552813,
+    "ece": 0.09026766439646851,
+    "per_class_pr": {
+      "NP": [
+        0.6345169610543943,
+        0.726851851851852
+      ],
+      "AP": [
+        0.46046356018727735,
+        0.513888888888889
+      ],
+      "HP": [
+        0.4888888888888889,
+        0.3171296296296296
+      ]
+    },
+    "confusion_3x3": [
+      [
+        314,
+        68,
+        50
+      ],
+      [
+        88,
+        222,
+        122
+      ],
+      [
+        99,
+        196,
+        137
+      ]
+    ],
+    "binary": {
+      "balanced_acc": 0.7552083333333334,
+      "f1": 0.8153116920306708,
+      "pain_precision": 0.8571322905501965,
+      "pain_recall": 0.7835648148148148,
+      "auc": 0.8211484053497943,
+      "confusion_2x2": [
+        [
+          314,
+          118
+        ],
+        [
+          187,
+          677
+        ]
+      ]
+    }
+  },
+  "n_seeds": 3,
+  "n_seeds_completed": 3,
+  "n_seeds_failed": 0,
+  "per_seed_balanced_acc": [
+    0.5347222222222222,
+    0.5092592592592592,
+    0.5138888888888888
+  ],
+  "balanced_acc_std": 0.011074614270376044,
+  "train_seconds": 844.1322569847107,
+  "inference_seconds": 0.0036406517028808594,
+  "spec": {
+    "data": {},
+    "decode": {
+      "strategy": "argmax"
+    },
+    "feature_extraction": null,
+    "model": {
+      "encoder_type": "gru",
+      "family": "multi_stream_bigru",
+      "fusion": "late_concat",
+      "fusion_dropout": 0.2,
+      "per_channel_hidden": 40,
+      "per_channel_layers": 2
+    },
+    "name": "iter_0018_c05_gru_champion",
+    "preprocessing": {
+      "normalize": "per_channel_zscore",
+      "padding": "right_zero_to_global_max"
+    },
+    "reasoning_summary": "iter_0018 c05. The GRU co-champion r130 config, re-run as the ensemble-component baseline and standing 1D reference (~0.5340).",
+    "training": {
+      "batch_size": 32,
+      "epochs": 150,
+      "focal_gamma": 1.0,
+      "loss": "ce_class_balanced",
+      "lr": 0.001,
+      "n_seeds": 3,
+      "optimizer": "adam",
+      "seed": 18050
+    }
+  }
+}
