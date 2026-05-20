@@ -104,3 +104,4 @@ Thumbs.db
 slurm-*.out
 *.err
 logs/
+portal_submissions/

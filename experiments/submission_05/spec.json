@@ -11,8 +11,14 @@
       "experiments/submission_03",
       "experiments/submission_04"
     ],
-    "weights": [3, 1, 1, 1],
-    "family": "prediction_ensemble"
+    "weights": [
+      1,
+      1,
+      1,
+      3
+    ],
+    "family": "prediction_ensemble",
+    "reasoning_summary": "HIP-G submission #5. WEIGHTED prediction ensemble. weights [1,1,1,3] -> #4 (residual spectrogram, the most AP-balanced spec over 20 seeds, AP=124/144) gets 0.5 of the vote, #1/#2/#3 each get ~0.167. The earlier [3,1,1,1] was based on a single-seed lottery roll that made #1 look balanced (148/140/144 once); the 20-seed expected behavior of spec #1 is actually AP-starved (52/144). #4 is the principled AP-protector. Weights are NOT val-tuned (12 subjects -> overfit); chosen from the spec-level expected per-class behavior measured at n=20 seeds."
   },
   "name": "submission_05_prediction_ensemble",
   "preprocessing": {},
