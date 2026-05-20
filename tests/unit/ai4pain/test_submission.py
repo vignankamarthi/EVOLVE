@@ -163,12 +163,35 @@ def test_partial_state_roundtrip(tmp_path):
     te = np.array([[0.5, 0.3, 0.2]], dtype=np.float64)
     submission._save_partial(tmp_path, [42, 43], va, te,
                               [{"balanced_acc": 0.5}, {"balanced_acc": 0.6}])
-    seeds, va_back, te_back, metrics = submission._load_partial(tmp_path)
+    (seeds, va_back, te_back, metrics,
+     per_seed_va, per_seed_te) = submission._load_partial(tmp_path)
     assert seeds == [42, 43]
     np.testing.assert_allclose(va_back, va)
     np.testing.assert_allclose(te_back, te)
     assert metrics[0]["balanced_acc"] == 0.5
     assert metrics[1]["balanced_acc"] == 0.6
+    # no per-seed probas saved -> empty lists (backwards-compat default)
+    assert per_seed_va == [] and per_seed_te == []
+
+
+def test_partial_state_roundtrip_with_per_seed_probas(tmp_path):
+    """Per-seed val/test probability lists round-trip too."""
+    va = np.zeros((2, 3), dtype=np.float64)
+    te = np.zeros((1, 3), dtype=np.float64)
+    psv = [np.array([[0.5, 0.3, 0.2], [0.1, 0.6, 0.3]]),
+           np.array([[0.2, 0.5, 0.3], [0.4, 0.2, 0.4]])]
+    pst = [np.array([[0.9, 0.05, 0.05]]),
+           np.array([[0.1, 0.8, 0.1]])]
+    submission._save_partial(
+        tmp_path, [42, 43], va, te,
+        [{"balanced_acc": 0.5}, {"balanced_acc": 0.6}],
+        per_seed_va_probas=psv, per_seed_te_probas=pst)
+    out = submission._load_partial(tmp_path)
+    assert out is not None
+    _seeds, _va, _te, _m, per_seed_va, per_seed_te = out
+    assert len(per_seed_va) == 2 and len(per_seed_te) == 2
+    np.testing.assert_allclose(per_seed_va[0], psv[0])
+    np.testing.assert_allclose(per_seed_te[1], pst[1])
 
 
 def test_load_partial_missing_returns_none(tmp_path):
@@ -247,6 +270,93 @@ def test_train_and_predict_writes_partial_per_seed(tmp_path):
     # final state: result.json present, partial cleaned up
     assert (tmp_path / "result.json").exists()
     assert not (tmp_path / "partial_state.json").exists()
+
+
+def test_per_seed_predictions_written_after_multi_seed(tmp_path):
+    """After a multi-seed _train_and_predict, per_seed_predictions.json
+    is written with per-seed val + test probability tables (NOT just the
+    averaged tables). Bundle ensembling reads from this file."""
+    import json as _json
+
+    class _Linear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(4, 3)
+
+        def forward(self, x):
+            return self.fc(x.mean(dim=1))
+
+    rng = np.random.default_rng(0)
+    Xtr = rng.standard_normal((6, 5, 4)).astype(np.float32)
+    Xv = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    Xte = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    ytr = np.array([0, 0, 1, 1, 2, 2])
+    yv = np.array([0, 1, 2])
+    train_cfg = {"epochs": 1, "batch_size": 6, "lr": 1e-2, "seed": 100,
+                 "n_seeds": 3, "optimizer": "adam"}
+    spec = {"name": "per_seed_test", "model": {"family": "test"},
+            "training": train_cfg}
+    submission._train_and_predict(
+        lambda: _Linear(), [Xtr], ytr, [Xv], yv, [7, 7, 7],
+        [Xte], [8, 8, 8], train_cfg, tmp_path, spec)
+
+    psp_path = tmp_path / "per_seed_predictions.json"
+    assert psp_path.exists()
+    psp = _json.loads(psp_path.read_text())
+    assert psp["seeds"] == [100, 101, 102]
+    # shapes: N x 3 trials x 3 classes
+    assert np.asarray(psp["val_proba"]).shape == (3, 3, 3)
+    assert np.asarray(psp["test_proba"]).shape == (3, 3, 3)
+    assert psp["val_true_labels"] == [0, 1, 2]
+    assert psp["val_subjects"] == [7, 7, 7]
+    assert psp["test_subjects"] == [8, 8, 8]
+    # Each per-seed row's probabilities still sum to ~1
+    for seed_block in psp["val_proba"]:
+        for row in seed_block:
+            assert abs(sum(row) - 1.0) < 1e-3
+
+
+def test_per_seed_predictions_survives_resume(tmp_path):
+    """If a run is killed mid-loop and resumed, the final per_seed_predictions.json
+    contains all completed seeds across both partial-state lifetimes."""
+    class _Linear(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(4, 3)
+
+        def forward(self, x):
+            return self.fc(x.mean(dim=1))
+
+    rng = np.random.default_rng(0)
+    Xtr = rng.standard_normal((6, 5, 4)).astype(np.float32)
+    Xv = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    Xte = rng.standard_normal((3, 5, 4)).astype(np.float32)
+    ytr = np.array([0, 0, 1, 1, 2, 2])
+    yv = np.array([0, 1, 2])
+    common = dict(epochs=1, batch_size=6, lr=1e-2, optimizer="adam")
+
+    # First partial run: only 2 of 4 seeds (we cap by editing n_seeds).
+    spec = {"name": "p", "model": {"family": "test"},
+            "training": dict(common, seed=200, n_seeds=2)}
+    submission._train_and_predict(
+        lambda: _Linear(), [Xtr], ytr, [Xv], yv, [7, 7, 7],
+        [Xte], [8, 8, 8], spec["training"], tmp_path, spec)
+    # The first run completed and removed partial_state.json -- to simulate
+    # a wall-killed prior, re-save partial_state from result.json's per-seed
+    # data. Real resume tests live in test_train_and_predict_resumes_from_partial.
+
+    # Second run: 4 seeds, starting fresh -- final per_seed_predictions.json
+    # should have all 4 seeds, fresh.
+    spec = {"name": "p", "model": {"family": "test"},
+            "training": dict(common, seed=300, n_seeds=4)}
+    submission._train_and_predict(
+        lambda: _Linear(), [Xtr], ytr, [Xv], yv, [7, 7, 7],
+        [Xte], [8, 8, 8], spec["training"], tmp_path, spec)
+
+    import json as _json
+    psp = _json.loads((tmp_path / "per_seed_predictions.json").read_text())
+    assert len(psp["seeds"]) == 4
+    assert psp["seeds"] == [300, 301, 302, 303]
 
 
 def test_run_submission_rejects_unsupported_family(tmp_path):

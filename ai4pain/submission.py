@@ -109,30 +109,51 @@ def _make_loss(train_cfg: dict, y_train: np.ndarray, device):
 
 
 def _save_partial(run_dir, completed_seeds, va_proba_acc, te_proba_acc,
-                  per_seed_metrics):
+                  per_seed_metrics, per_seed_va_probas=None,
+                  per_seed_te_probas=None):
     """Atomically write partial_state.json. Called after every completed
     seed so a wall-killed run resumes from the next uncompleted seed
-    instead of restarting from seed 1."""
+    instead of restarting from seed 1.
+
+    `per_seed_va_probas` / `per_seed_te_probas` are lists of (n_trials, 3)
+    arrays (per-seed val/test probability tables), needed for per-seed
+    bundle ensembling downstream. Optional for backwards compat with the
+    older two-array-only partials.
+    """
     payload = {
         "completed_seeds": list(completed_seeds),
         "va_proba_acc": np.asarray(va_proba_acc).tolist(),
         "te_proba_acc": np.asarray(te_proba_acc).tolist(),
         "per_seed_metrics": per_seed_metrics,
     }
+    if per_seed_va_probas is not None:
+        payload["per_seed_va_probas"] = [np.asarray(a).tolist()
+                                          for a in per_seed_va_probas]
+    if per_seed_te_probas is not None:
+        payload["per_seed_te_probas"] = [np.asarray(a).tolist()
+                                          for a in per_seed_te_probas]
     _atomic_write_json(Path(run_dir) / "partial_state.json", payload)
 
 
 def _load_partial(run_dir):
     """Read partial_state.json if present -> (completed_seeds, va_acc, te_acc,
-    per_seed_metrics); None if absent. Arrays come back as np.float64."""
+    per_seed_metrics, per_seed_va_probas, per_seed_te_probas); None if absent.
+    Per-seed lists default to empty lists for backwards compat with older
+    partial files that didn't carry them."""
     p = Path(run_dir) / "partial_state.json"
     if not p.exists():
         return None
     data = json.loads(p.read_text())
+    per_seed_va = [np.asarray(a, dtype=np.float64)
+                   for a in data.get("per_seed_va_probas", [])]
+    per_seed_te = [np.asarray(a, dtype=np.float64)
+                   for a in data.get("per_seed_te_probas", [])]
     return (list(data["completed_seeds"]),
             np.asarray(data["va_proba_acc"], dtype=np.float64),
             np.asarray(data["te_proba_acc"], dtype=np.float64),
-            list(data["per_seed_metrics"]))
+            list(data["per_seed_metrics"]),
+            per_seed_va,
+            per_seed_te)
 
 
 def _write_predictions_csv(path, subjects, preds, probas, true_labels=None):
@@ -241,6 +262,8 @@ def _train_and_predict(model_factory, train_inputs, y_train, val_inputs,
     va_proba_acc = np.zeros((len(y_val), 3), dtype=np.float64)
     te_proba_acc = np.zeros((len(subjects_test), 3), dtype=np.float64)
     per_seed_metrics: list[dict] = []
+    per_seed_va_probas: list[np.ndarray] = []
+    per_seed_te_probas: list[np.ndarray] = []
     completed_seeds: list[int] = []
     t0 = time.time()
     n_failed = 0
@@ -249,7 +272,8 @@ def _train_and_predict(model_factory, train_inputs, y_train, val_inputs,
     run_dir = Path(run_dir)
     partial = _load_partial(run_dir)
     if partial is not None:
-        completed_seeds, va_proba_acc, te_proba_acc, per_seed_metrics = partial
+        (completed_seeds, va_proba_acc, te_proba_acc, per_seed_metrics,
+         per_seed_va_probas, per_seed_te_probas) = partial
         print(f"[submission] resuming: {len(completed_seeds)} seeds already "
               f"completed -> {completed_seeds}", flush=True)
 
@@ -272,12 +296,16 @@ def _train_and_predict(model_factory, train_inputs, y_train, val_inputs,
             continue
         va_proba_acc += va_proba
         te_proba_acc += te_proba
+        per_seed_va_probas.append(va_proba.astype(np.float64))
+        per_seed_te_probas.append(te_proba.astype(np.float64))
         per_seed_metrics.append(best_val_metrics)
         completed_seeds.append(seed)
         # Checkpoint after every successful seed so a wall-killed re-run
         # picks up here instead of restarting.
         _save_partial(run_dir, completed_seeds, va_proba_acc, te_proba_acc,
-                      per_seed_metrics)
+                      per_seed_metrics,
+                      per_seed_va_probas=per_seed_va_probas,
+                      per_seed_te_probas=per_seed_te_probas)
         print(f"[submission] seed {seed} best val_bal="
               f"{best_val_metrics['balanced_acc']:.4f}", flush=True)
     per_seed_balanced_acc = [m["balanced_acc"] for m in per_seed_metrics]
@@ -326,6 +354,22 @@ def _train_and_predict(model_factory, train_inputs, y_train, val_inputs,
         "spec": spec,
     }
     _atomic_write_json(run_dir / "result.json", result)
+    # Per-seed probability tables: needed for downstream bundle ensembling
+    # (per_seed_predictions.json carries each seed's full val + test
+    # probability table so the ensemble can soft-vote ACROSS architectures
+    # WITHIN each seed, instead of averaging-across-seeds-then-ensembling).
+    per_seed_payload = {
+        "seeds": list(completed_seeds),
+        "val_proba": [np.asarray(a).tolist() for a in per_seed_va_probas],
+        "test_proba": [np.asarray(a).tolist() for a in per_seed_te_probas],
+        "val_subjects": [int(s) for s in subjects_val],
+        "val_trial_indices": list(range(len(y_val))),
+        "val_true_labels": [int(y) for y in y_val],
+        "test_subjects": [int(s) for s in subjects_test],
+        "test_trial_indices": list(range(len(subjects_test))),
+    }
+    _atomic_write_json(run_dir / "per_seed_predictions.json",
+                       per_seed_payload)
     # Final result is in -- the partial checkpoint has served its purpose.
     (run_dir / "partial_state.json").unlink(missing_ok=True)
     print(f"[submission] n_seeds={n_completed}/{n_seeds}  "

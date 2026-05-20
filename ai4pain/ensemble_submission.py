@@ -19,6 +19,8 @@ import csv
 import json
 from pathlib import Path
 
+import numpy as np
+
 LABEL_NAMES = ["NP", "AP", "HP"]
 
 
@@ -218,8 +220,174 @@ def run_val_ensemble(run_dir: Path) -> dict:
     return metrics
 
 
+def _read_per_seed(path: Path) -> dict:
+    """Read a component's per_seed_predictions.json -> dict with seeds,
+    val_proba (N x T_val x 3), test_proba (N x T_test x 3), val_true_labels."""
+    data = json.loads(Path(path).read_text())
+    return {
+        "seeds": list(data["seeds"]),
+        "val_proba": data["val_proba"],
+        "test_proba": data["test_proba"],
+        "val_true_labels": data.get("val_true_labels"),
+        "val_subjects": data.get("val_subjects"),
+        "test_subjects": data.get("test_subjects"),
+        "val_trial_indices": data.get("val_trial_indices"),
+        "test_trial_indices": data.get("test_trial_indices"),
+    }
+
+
+def score_val_bundles(per_seed_json_paths: list[Path],
+                      weights: list[float] | None = None) -> dict:
+    """**Per-seed bundle ensembling** (the honest std methodology).
+
+    For each seed i, form the weighted soft-vote across the K components'
+    i-th-seed val probability tables -> bundle_i_val_proba -> argmax ->
+    bundle_i accuracy against true val labels. N bundles -> mean +/- std
+    for both 3-class and binary (Pain vs No Pain).
+
+    All components MUST have the same seeds in the same order (the runner
+    uses consecutive seeds starting at spec.training.seed; specs are
+    re-runnable with the same seed list so alignment is structural).
+
+    Returns dict with acc_*_mean, acc_*_std, per_bundle_acc_*, n_bundles.
+    """
+    comps = [_read_per_seed(p) for p in per_seed_json_paths]
+    if not comps:
+        raise ValueError("no components")
+    K = len(comps)
+    n_seeds = len(comps[0]["seeds"])
+    for k, c in enumerate(comps[1:], start=1):
+        if len(c["seeds"]) != n_seeds:
+            raise ValueError(
+                f"component {k} has {len(c['seeds'])} seeds; "
+                f"component 0 has {n_seeds}. Bundle ensembling requires "
+                f"matched seed counts across all components.")
+    if weights is None:
+        weights = [1.0] * K
+    if len(weights) != K:
+        raise ValueError(f"got {len(weights)} weights for {K} components")
+    w = np.asarray(weights, dtype=np.float64)
+    w = w / w.sum()
+
+    truth = np.asarray(comps[0]["val_true_labels"], dtype=int)
+    n_val = len(truth)
+
+    per_bundle_3 = []
+    per_bundle_bin = []
+    for i in range(n_seeds):
+        # bundle_i_val_proba = sum_k w_k * p_k_val_seed_i
+        bundle_val = np.zeros((n_val, 3), dtype=np.float64)
+        for k in range(K):
+            bundle_val += w[k] * np.asarray(comps[k]["val_proba"][i],
+                                              dtype=np.float64)
+        preds = bundle_val.argmax(axis=1)
+        acc3 = float((preds == truth).mean())
+        # binary: 0 = NP, {1,2} = Pain
+        bin_preds = (preds != 0).astype(int)
+        bin_truth = (truth != 0).astype(int)
+        accbin = float((bin_preds == bin_truth).mean())
+        per_bundle_3.append(acc3)
+        per_bundle_bin.append(accbin)
+
+    return {
+        "n_bundles": n_seeds,
+        "per_bundle_acc_3class": per_bundle_3,
+        "per_bundle_acc_binary": per_bundle_bin,
+        "acc_3class_mean": float(np.mean(per_bundle_3)),
+        "acc_3class_std": float(np.std(per_bundle_3, ddof=0)),
+        "acc_binary_mean": float(np.mean(per_bundle_bin)),
+        "acc_binary_std": float(np.std(per_bundle_bin, ddof=0)),
+        "weights": list(weights),
+    }
+
+
+def run_bundle_ensemble(run_dir: Path) -> dict:
+    """End-to-end bundle ensemble: read spec.components' per_seed_predictions,
+    score val bundles (mean +/- std), write averaged-bundle test
+    predictions + val_ensemble_metrics.json. Pure CSV/JSON math, no torch."""
+    run_dir = Path(run_dir)
+    spec = json.loads((run_dir / "spec.json").read_text())
+    components = spec.get("model", {}).get("components", [])
+    if not components:
+        raise ValueError("spec.model.components is empty")
+    weights = spec.get("model", {}).get("weights")
+
+    psp_paths = [Path(c) / "per_seed_predictions.json" for c in components]
+    missing = [str(p) for p in psp_paths if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"per-seed prediction files not found: {missing}. "
+            f"Re-run submissions 1-4 with the per-seed dump runner first.")
+
+    val_metrics = score_val_bundles(psp_paths, weights=weights)
+
+    # Test predictions: for each bundle i, compute bundle_i_test_proba; then
+    # mean across bundles -> argmax. Linearity makes this equivalent to
+    # averaging the component-averaged probabilities, but the methodological
+    # origin is now per-seed-bundle (matches the val std story).
+    comps = [_read_per_seed(p) for p in psp_paths]
+    K = len(comps)
+    n_seeds = len(comps[0]["seeds"])
+    if weights is None:
+        weights = [1.0] * K
+    w = np.asarray(weights, dtype=np.float64)
+    w = w / w.sum()
+    n_test = len(comps[0]["test_proba"][0])
+    bundle_test_mean = np.zeros((n_test, 3), dtype=np.float64)
+    for i in range(n_seeds):
+        bundle_i = np.zeros((n_test, 3), dtype=np.float64)
+        for k in range(K):
+            bundle_i += w[k] * np.asarray(comps[k]["test_proba"][i],
+                                            dtype=np.float64)
+        bundle_test_mean += bundle_i
+    bundle_test_mean /= n_seeds
+    test_preds = bundle_test_mean.argmax(axis=1)
+    subjects_test = comps[0]["test_subjects"] or [0] * n_test
+
+    pred_path = run_dir / "test_predictions.csv"
+    with open(pred_path, "w", newline="") as f:
+        w_csv = csv.writer(f)
+        w_csv.writerow(["subject", "trial_index", "pred_label", "pred_name",
+                        "p_NP", "p_AP", "p_HP"])
+        for ti in range(n_test):
+            p = int(test_preds[ti])
+            w_csv.writerow([int(subjects_test[ti]), ti, p, LABEL_NAMES[p],
+                            f"{bundle_test_mean[ti, 0]:.4f}",
+                            f"{bundle_test_mean[ti, 1]:.4f}",
+                            f"{bundle_test_mean[ti, 2]:.4f}"])
+
+    counts = {LABEL_NAMES[c]: int((test_preds == c).sum()) for c in range(3)}
+    result = {
+        "name": spec.get("name", "ensemble_submission"),
+        "bundle_ensemble": True,
+        "components": components,
+        "test_n_trials": int(n_test),
+        "test_pred_class_counts": counts,
+        **val_metrics,
+    }
+    _atomic_write_json(run_dir / "val_ensemble_metrics.json", result)
+    print(f"[bundle-ensemble] n_bundles={val_metrics['n_bundles']}  "
+          f"val 3-class {val_metrics['acc_3class_mean']:.4f} +/- "
+          f"{val_metrics['acc_3class_std']:.4f}  "
+          f"val binary {val_metrics['acc_binary_mean']:.4f} +/- "
+          f"{val_metrics['acc_binary_std']:.4f}", flush=True)
+    print(f"[bundle-ensemble] test predictions -> {pred_path}  counts {counts}",
+          flush=True)
+    return result
+
+
 def run_from_dir(run_dir: Path, data_root: Path | None = None) -> dict:
-    return run_ensemble(Path(run_dir), data_root)
+    """Dispatcher: if per_seed_predictions.json exists for all components,
+    use the per-seed bundle ensemble (the honest std methodology);
+    otherwise fall back to legacy averaged-probability ensemble."""
+    run_dir = Path(run_dir)
+    spec = json.loads((run_dir / "spec.json").read_text())
+    components = spec.get("model", {}).get("components", [])
+    have_per_seed = components and all(
+        (Path(c) / "per_seed_predictions.json").exists() for c in components)
+    if have_per_seed:
+        return run_bundle_ensemble(run_dir)
+    return run_ensemble(run_dir, data_root)
 
 
 if __name__ == "__main__":
@@ -227,10 +395,21 @@ if __name__ == "__main__":
     parser.add_argument("--run-dir", required=True, type=Path)
     parser.add_argument("--data-root", type=Path, default=None)
     parser.add_argument("--val", action="store_true",
-                        help="score the ensemble on the validation split "
-                             "(needs each component's val_predictions.csv)")
+                        help="score the ensemble on the val split (legacy: "
+                             "averages component val_predictions.csv files)")
+    parser.add_argument("--bundle", action="store_true",
+                        help="force per-seed bundle ensemble (val + test in "
+                             "one pass; requires per_seed_predictions.json "
+                             "per component)")
+    parser.add_argument("--legacy", action="store_true",
+                        help="force legacy averaged-probability ensemble even "
+                             "if per-seed predictions are available")
     args = parser.parse_args()
-    if args.val:
+    if args.bundle:
+        run_bundle_ensemble(args.run_dir)
+    elif args.val:
         run_val_ensemble(args.run_dir)
+    elif args.legacy:
+        run_ensemble(args.run_dir, args.data_root)
     else:
         run_from_dir(args.run_dir, args.data_root)
